@@ -64,10 +64,8 @@ def i(v, d=0):
 def score_int(v):
     if type(v) == "int": return v
     if type(v) == "string" and v != "":
-        ok = True
-        for c in v:
-            if c < "0" or c > "9": ok = False
-        if ok: return int(v)
+        for n in range(0, 100):
+            if v == str(n): return n
     return 0
 
 def fetch_json(url, ttl=30):
