@@ -114,14 +114,13 @@ def centered_panel_text(text, font="5x8", color=WHITE):
 def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
-    location_color = s(config.get("pregame_location_color"), WHITE)
+    # Date + kickoff time only. Location intentionally omitted.
+    # Use the original clock_text path that rendered correctly before 8c396.
     return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(1),
+        spacer_h(3),
         centered_panel_text(g["date_text"], "CG-pixel-3x5-mono", date_color),
-        spacer_h(2),
-        centered_panel_text(g["time_text"], "5x8", time_color),
-        spacer_h(2),
-        centered_panel_text("AT " + g["home"]["code"], "CG-pixel-3x5-mono", location_color),
+        spacer_h(3),
+        centered_panel_text(g["clock_text"], "5x8", time_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -160,12 +159,14 @@ def parse_competition(event, timezone):
     situation=comp.get("situation"); possession=""; down_distance=""; field_position=""
     if type(situation)=="dict":
         possession=s(situation.get("possession"),""); down_distance=s(situation.get("shortDownDistanceText"),s(situation.get("downDistanceText"),"")); field_position=s(situation.get("possessionText"),"")
-    date_raw=s(event.get("date"),""); date_text="TBD"; time_text="TBD"
+    date_raw=s(event.get("date"),""); date_text="TBD"; clock_text="TBD"
     if date_raw!="":
         parse_date=date_raw
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
-        t=time.parse_time(parse_date).in_location(timezone); date_text=t.format("MON 1/2").upper(); time_text=t.format("3:04")
-    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"date_text":date_text,"time_text":time_text}
+        t=time.parse_time(parse_date).in_location(timezone)
+        date_text=t.format("MON 1/2").upper()
+        clock_text=t.format("3:04")
+    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"date_text":date_text,"clock_text":clock_text}
 
 def get_games(config):
     data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30)
@@ -202,7 +203,7 @@ def get_schema():
         schema.Dropdown(id="mode",name="Game Mode",desc="Track one team or cycle all NFL games.",icon="gear",default="team",options=[schema.Option(display="Specific Team",value="team"),schema.Option(display="All Games",value="all")]),
         schema.Dropdown(id="team",name="Team Focus",desc="Team used in Specific Team mode.",icon="gear",default="PHI",options=teamOptions),
         schema.Color(id="pregame_date_color",name="Pregame Date Color",desc="Pregame date color.",icon="brush",default=WHITE), schema.Color(id="pregame_time_color",name="Pregame Time Color",desc="Pregame kickoff-time color.",icon="brush",default=WHITE),
-        schema.Color(id="pregame_location_color",name="Pregame Location Color",desc="Pregame location/home-team color.",icon="brush",default=WHITE), schema.Color(id="quarter_color",name="Quarter Color",desc="Live-game quarter color.",icon="brush",default=WHITE),
+        schema.Color(id="quarter_color",name="Quarter Color",desc="Live-game quarter color.",icon="brush",default=WHITE),
         schema.Color(id="clock_color",name="Clock Color",desc="Live-game clock color.",icon="brush",default=WHITE), schema.Color(id="down_color",name="Down & Distance Color",desc="Live-game down and distance color.",icon="brush",default=WHITE),
         schema.Color(id="field_color",name="Field Position Color",desc="Live-game field position color.",icon="brush",default=WHITE), schema.Color(id="final_color",name="Final Color",desc="Final-state text color.",icon="brush",default=WHITE),
     ])
