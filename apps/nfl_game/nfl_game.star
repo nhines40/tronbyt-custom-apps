@@ -85,14 +85,22 @@ def team_meta(team):
     if col == "" or col == "#000000" or col == "#ffffff": col = TEAM_BG.get(code, "#202020")
     return {"code":code, "bg":col, "logo":s(team.get("logo"), "")}
 
+def record_text(competitor):
+    if type(competitor) != "dict": return ""
+    records = competitor.get("records")
+    if type(records) != "list" or len(records) == 0: return ""
+    for record in records:
+        if type(record) != "dict": continue
+        summary = s(record.get("summary"), "")
+        if summary != "": return summary
+    return ""
+
 def logo_node(meta, size):
     img = logo_bytes(meta["logo"])
     if img != None:
         return render.Image(img, width=size, height=size)
     return render.Text(meta["code"][0], font="6x13", color=WHITE)
 
-# Live/final team tile: logo is pushed to the full 16px tile height.
-# Abbreviation remains white; score is centered directly underneath it.
 def team_tile(meta, score, possession):
     logo = logo_node(meta, 16)
     dot = render.Box(width=3, height=3, color=WHITE) if possession else spacer_w(3)
@@ -102,29 +110,31 @@ def team_tile(meta, score, possession):
         spacer_h(1),
         render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="center", cross_align="center"),
     ], main_align="start", cross_align="stretch"))
-    return render.Box(
-        color=meta["bg"], height=16,
-        child=render.Row(children=[
-            render.Box(width=16, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")),
-            spacer_w(2),
-            info,
-            spacer_w(2),
-            dot,
-        ], main_align="start", cross_align="center"),
-    )
+    return render.Box(color=meta["bg"], height=16, child=render.Row(children=[
+        render.Box(width=16, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")),
+        spacer_w(2), info, spacer_w(2), dot,
+    ], main_align="start", cross_align="center"))
 
-# Pregame does not show abbreviation or 0 score. Each half of the left panel
-# is dedicated entirely to that team's logo on its team-color background.
-def pregame_team_tile(meta):
+# Pregame keeps the logo as the dominant visual and adds the team's current record
+# in a compact area at the far right of the 36px team block.
+def pregame_team_tile(meta, record):
     logo = logo_node(meta, 16)
-    return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(
-        children=[logo], main_align="center", cross_align="center"))
+    record_node = spacer_w(10)
+    if record != "":
+        record_node = render.Box(width=10, height=16, child=render.Row(
+            children=[render.Text(record, font="CG-pixel-3x5-mono", color=WHITE)],
+            main_align="center", cross_align="center"))
+    return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
+        render.Box(width=25, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")),
+        spacer_w(1),
+        record_node,
+    ], main_align="start", cross_align="center"))
 
 def left_panel(g):
     if g["state"] == "pre":
         return render.Box(width=36, child=render.Column(children=[
-            pregame_team_tile(g["away"]),
-            pregame_team_tile(g["home"]),
+            pregame_team_tile(g["away"], g["away_record"]),
+            pregame_team_tile(g["home"], g["home_record"]),
         ]))
     return render.Box(width=36, child=render.Column(children=[
         team_tile(g["away"], g["away_score"], g["possession"] == g["away"]["code"] and g["state"] == "live"),
@@ -138,12 +148,17 @@ def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
     location_color = s(config.get("pregame_location_color"), WHITE)
+
+    # Each piece occupies the full 28px panel width and is independently centered.
+    # The stack begins near the top. The numeric kickoff time is deliberately dominant;
+    # AM/PM is kept small and centered immediately beneath it to avoid horizontal crowding.
     return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(4),
+        spacer_h(1),
         centered_text(g["date_text"], "CG-pixel-3x5-mono", date_color),
         spacer_h(2),
-        centered_text(g["time_text"], "5x8", time_color),
-        spacer_h(3),
+        centered_text(g["clock_text"], "6x10-rounded", time_color),
+        centered_text(g["meridiem"], "CG-pixel-3x5-mono", time_color),
+        spacer_h(2),
         centered_text("AT " + g["home"]["code"], "CG-pixel-3x5-mono", location_color),
     ], main_align="start", cross_align="stretch"))
 
@@ -181,13 +196,22 @@ def parse_competition(event, timezone):
     comp = comps[0]
     competitors = comp.get("competitors")
     if type(competitors) != "list": return None
-    away = None; home = None; away_score = 0; home_score = 0
+    away = None; home = None
+    away_score = 0; home_score = 0
+    away_record = ""; home_record = ""
     for c in competitors:
         if type(c) != "dict": continue
         m = team_meta(c.get("team"))
-        if s(c.get("homeAway")) == "away": away = m; away_score = score_int(c.get("score"))
-        if s(c.get("homeAway")) == "home": home = m; home_score = score_int(c.get("score"))
+        if s(c.get("homeAway")) == "away":
+            away = m
+            away_score = score_int(c.get("score"))
+            away_record = record_text(c)
+        if s(c.get("homeAway")) == "home":
+            home = m
+            home_score = score_int(c.get("score"))
+            home_record = record_text(c)
     if away == None or home == None: return None
+
     status = event.get("status")
     stype = status.get("type") if type(status) == "dict" else {}
     state_raw = s(stype.get("state")) if type(stype) == "dict" else "pre"
@@ -195,24 +219,34 @@ def parse_competition(event, timezone):
     display_clock = s(status.get("displayClock"), "") if type(status) == "dict" else ""
     period = i(status.get("period"), 0) if type(status) == "dict" else 0
     quarter = "Q" + str(period) if period > 0 else ""
+
     situation = comp.get("situation")
     possession = ""; down_distance = ""; field_position = ""
     if type(situation) == "dict":
         possession = s(situation.get("possession"), "")
         down_distance = s(situation.get("shortDownDistanceText"), s(situation.get("downDistanceText"), ""))
         field_position = s(situation.get("possessionText"), "")
+
     date_raw = s(event.get("date"), "")
-    date_text = "TBD"; time_text = "TBD"
+    date_text = "TBD"; clock_text = "TBD"; meridiem = ""
     if date_raw != "":
         parse_date = date_raw
         if len(date_raw) == 17 and date_raw[16] == "Z":
             parse_date = date_raw[:16] + ":00Z"
         t = time.parse_time(parse_date).in_location(timezone)
         date_text = t.format("MON 1/2").upper()
-        time_text = t.format("3:04 PM")
-    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"state":state,
-        "quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,
-        "field_position":field_position,"date_text":date_text,"time_text":time_text}
+        clock_text = t.format("3:04")
+        meridiem = t.format("PM")
+
+    return {
+        "away":away, "home":home,
+        "away_score":away_score, "home_score":home_score,
+        "away_record":away_record, "home_record":home_record,
+        "state":state, "quarter":quarter, "clock":display_clock,
+        "possession":possession, "down_distance":down_distance,
+        "field_position":field_position, "date_text":date_text,
+        "clock_text":clock_text, "meridiem":meridiem,
+    }
 
 def get_games(config):
     data = fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100", 30)
