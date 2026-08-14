@@ -90,14 +90,13 @@ def team_tile(meta, score, possession):
     ], main_align="start", cross_align="center"))
 
 def pregame_team_tile(meta, record):
-    # Next logical logo size: use the full 20px-wide logo region while keeping
-    # height locked to the 16px team row, so nothing else in the layout moves.
     logo = logo_node(meta, 20, 16)
-    record_node = spacer_w(15)
-    if record != "":
-        record_node = render.Box(width=15, height=16, child=render.Row(children=[render.Text(record, font="CG-pixel-3x5-mono", color=WHITE)], main_align="center", cross_align="center"))
+    info_node = render.Box(width=15, height=16, child=render.Column(children=[
+        render.Box(width=15, height=8, child=render.Row(children=[render.Text(meta["code"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
+        render.Box(width=15, height=8, child=render.Row(children=[render.Text(record, font="CG-pixel-3x5-mono", color=WHITE)], main_align="center", cross_align="center")),
+    ], main_align="start", cross_align="stretch"))
     return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
-        render.Box(width=20, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), record_node,
+        render.Box(width=20, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), info_node,
     ], main_align="start", cross_align="center"))
 
 def left_panel(g):
