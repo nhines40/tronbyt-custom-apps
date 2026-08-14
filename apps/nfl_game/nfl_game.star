@@ -108,14 +108,6 @@ def left_panel(g):
 def centered_panel_text(text, font="5x8", color=WHITE):
     return render.Box(width=28, child=render.Row(children=[spacer_w(1), render.Box(width=27, child=render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"))], main_align="start", cross_align="center"))
 
-def centered_panel_row(text, height, font, color):
-    return render.Box(width=28, height=height, child=render.Row(children=[
-        spacer_w(1),
-        render.Box(width=27, height=height, child=render.Column(children=[
-            render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
-        ], main_align="center", cross_align="stretch")),
-    ], main_align="start", cross_align="center"))
-
 def compact_preview_row(text, height, font, color):
     return render.Box(width=28, height=height, child=render.Column(children=[
         render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
@@ -125,9 +117,10 @@ def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
     return render.Box(width=28, height=32, child=render.Column(children=[
-        compact_preview_row(g["weekday_text"], 7, "tom-thumb", date_color),
+        spacer_h(1),
+        compact_preview_row(g["weekday_text"], 6, "tom-thumb", date_color),
         compact_preview_row(g["date_text"], 9, "CG-pixel-3x5-mono", date_color),
-        compact_preview_row(g["clock_text"], 16, "5x8", time_color),
+        compact_preview_row(g["clock_text"], 16, "6x10-rounded", time_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -172,7 +165,7 @@ def parse_competition(event, timezone):
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
         t=time.parse_time(parse_date).in_location(timezone)
         weekday_text=t.format("Mon").upper()
-        date_text=t.format("1/2")
+        date_text=t.format("Jan 2").upper()
         clock_text=t.format("3:04")
     return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"clock_text":clock_text}
 
