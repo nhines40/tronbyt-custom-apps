@@ -1,0 +1,11 @@
+---
+id: nfl-game
+name: NFL Game
+summary: NFL scoreboard in the MLB Game style
+desc: NFL game scoreboard with team tiles, live situation, final scores, and all-games mode.
+author: nhines40
+category: sports
+tags:
+  - gaming
+  - nfl
+  - football
