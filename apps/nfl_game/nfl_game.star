@@ -116,14 +116,21 @@ def centered_panel_row(text, height, font, color):
         ], main_align="center", cross_align="stretch")),
     ], main_align="start", cross_align="center"))
 
+def compact_preview_row(text, height, font, color):
+    # Preview rows use the full 28px width (no optical 1px shift) so compact
+    # date/time strings get every available pixel and cannot clip at the edge.
+    return render.Box(width=28, height=height, child=render.Column(children=[
+        render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
+    ], main_align="center", cross_align="stretch"))
+
 def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
-    # Give the compact date only 11px of vertical space and the kickoff time
-    # the remaining 21px. This moves the time upward while allowing a larger font.
+    # Small date + small time, with the split raised from 16px to 12px so the
+    # kickoff clock sits noticeably higher than before.
     return render.Box(width=28, height=32, child=render.Column(children=[
-        centered_panel_row(g["date_text"], 11, "tom-thumb", date_color),
-        centered_panel_row(g["clock_text"], 21, "6x13", time_color),
+        compact_preview_row(g["date_text"], 12, "tom-thumb", date_color),
+        compact_preview_row(g["clock_text"], 20, "tom-thumb", time_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -167,7 +174,9 @@ def parse_competition(event, timezone):
         parse_date=date_raw
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
         t=time.parse_time(parse_date).in_location(timezone)
-        date_text=t.format("Mon 1/2").upper()
+        # Removing the single space saves enough horizontal room for two-digit
+        # dates while keeping the same weekday + M/D orientation.
+        date_text=t.format("Mon1/2").upper()
         clock_text=t.format("3:04")
     return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"date_text":date_text,"clock_text":clock_text}
 
