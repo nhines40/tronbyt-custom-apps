@@ -136,11 +136,11 @@ def compact_preview_row(text, width, height, font, color):
     ], main_align="center", cross_align="stretch"))
 
 def pregame_date_row(month, day, color, width):
-    left_width = width // 2
+    left_width = (width // 2) + 1
     right_width = width - left_width
     return render.Box(width=width, height=8, child=render.Row(children=[
-        render.Box(width=left_width, height=8, child=render.Row(children=[spacer_w(1), render.Text(month, font="tom-thumb", color=color)], main_align="end", cross_align="center")),
-        render.Box(width=right_width, height=8, child=render.Row(children=[spacer_w(3), render.Text(day, font="tom-thumb", color=color)], main_align="start", cross_align="center")),
+        render.Box(width=left_width, height=8, child=render.Row(children=[spacer_w(1), render.Text(month, font="tom-thumb", color=color), spacer_w(1)], main_align="end", cross_align="center")),
+        render.Box(width=right_width, height=8, child=render.Row(children=[spacer_w(2), render.Text(day, font="tom-thumb", color=color)], main_align="start", cross_align="center")),
     ], main_align="start", cross_align="center"))
 
 def pregame_time_row(hour, minute, color, width):
