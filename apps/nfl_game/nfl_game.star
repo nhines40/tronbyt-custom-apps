@@ -115,17 +115,16 @@ def team_tile(meta, score, possession):
         spacer_w(2), info, spacer_w(2), dot,
     ], main_align="start", cross_align="center"))
 
-# Pregame keeps the logo as the dominant visual and adds the team's current record
-# in a compact area at the far right of the 36px team block.
+# Pregame: logo remains dominant, but reserve a guaranteed 15px record area.
 def pregame_team_tile(meta, record):
     logo = logo_node(meta, 16)
-    record_node = spacer_w(10)
+    record_node = spacer_w(15)
     if record != "":
-        record_node = render.Box(width=10, height=16, child=render.Row(
+        record_node = render.Box(width=15, height=16, child=render.Row(
             children=[render.Text(record, font="CG-pixel-3x5-mono", color=WHITE)],
             main_align="center", cross_align="center"))
     return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
-        render.Box(width=25, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")),
+        render.Box(width=20, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")),
         spacer_w(1),
         record_node,
     ], main_align="start", cross_align="center"))
@@ -141,25 +140,24 @@ def left_panel(g):
         team_tile(g["home"], g["home_score"], g["possession"] == g["home"]["code"] and g["state"] == "live"),
     ]))
 
-def centered_text(text, font="5x8", color=WHITE):
-    return render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")
+# Important: the outer Box is fixed to the full right-panel width. This makes
+# centering real rather than centering inside a content-sized Row.
+def centered_panel_text(text, font="5x8", color=WHITE):
+    return render.Box(width=28, child=render.Row(
+        children=[render.Text(text, font=font, color=color)],
+        main_align="center", cross_align="center"))
 
 def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
     location_color = s(config.get("pregame_location_color"), WHITE)
-
-    # Each piece occupies the full 28px panel width and is independently centered.
-    # The stack begins near the top. The numeric kickoff time is deliberately dominant;
-    # AM/PM is kept small and centered immediately beneath it to avoid horizontal crowding.
     return render.Box(width=28, height=32, child=render.Column(children=[
         spacer_h(1),
-        centered_text(g["date_text"], "CG-pixel-3x5-mono", date_color),
+        centered_panel_text(g["date_text"], "CG-pixel-3x5-mono", date_color),
         spacer_h(2),
-        centered_text(g["clock_text"], "6x10-rounded", time_color),
-        centered_text(g["meridiem"], "CG-pixel-3x5-mono", time_color),
+        centered_panel_text(g["time_text"], "CG-pixel-3x5-mono", time_color),
         spacer_h(2),
-        centered_text("AT " + g["home"]["code"], "CG-pixel-3x5-mono", location_color),
+        centered_panel_text("AT " + g["home"]["code"], "CG-pixel-3x5-mono", location_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -169,19 +167,19 @@ def live_panel(g, config):
     fc = s(config.get("field_color"), WHITE)
     return render.Box(width=28, height=32, child=render.Column(children=[
         spacer_h(1),
-        centered_text(g["quarter"], "CG-pixel-3x5-mono", qc),
+        centered_panel_text(g["quarter"], "CG-pixel-3x5-mono", qc),
         spacer_h(1),
-        centered_text(g["clock"], "6x10-rounded", tc),
+        centered_panel_text(g["clock"], "5x8", tc),
         spacer_h(1),
-        centered_text(g["down_distance"], "CG-pixel-3x5-mono", dc),
+        centered_panel_text(g["down_distance"], "CG-pixel-3x5-mono", dc),
         spacer_h(1),
-        centered_text(g["field_position"], "CG-pixel-3x5-mono", fc),
+        centered_panel_text(g["field_position"], "CG-pixel-3x5-mono", fc),
     ], main_align="start", cross_align="stretch"))
 
 def final_panel(config):
     final_color = s(config.get("final_color"), WHITE)
     return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(11), centered_text("FINAL", "6x10-rounded", final_color)
+        spacer_h(11), centered_panel_text("FINAL", "CG-pixel-3x5-mono", final_color)
     ], cross_align="stretch"))
 
 def render_game(g, config):
@@ -228,15 +226,14 @@ def parse_competition(event, timezone):
         field_position = s(situation.get("possessionText"), "")
 
     date_raw = s(event.get("date"), "")
-    date_text = "TBD"; clock_text = "TBD"; meridiem = ""
+    date_text = "TBD"; time_text = "TBD"
     if date_raw != "":
         parse_date = date_raw
         if len(date_raw) == 17 and date_raw[16] == "Z":
             parse_date = date_raw[:16] + ":00Z"
         t = time.parse_time(parse_date).in_location(timezone)
         date_text = t.format("MON 1/2").upper()
-        clock_text = t.format("3:04")
-        meridiem = t.format("PM")
+        time_text = t.format("3:04 PM")
 
     return {
         "away":away, "home":home,
@@ -245,7 +242,7 @@ def parse_competition(event, timezone):
         "state":state, "quarter":quarter, "clock":display_clock,
         "possession":possession, "down_distance":down_distance,
         "field_position":field_position, "date_text":date_text,
-        "clock_text":clock_text, "meridiem":meridiem,
+        "time_text":time_text,
     }
 
 def get_games(config):
@@ -271,7 +268,9 @@ def selected_games(config):
     return out
 
 def no_game():
-    return render.Root(child=render.Box(color=BLACK, width=64, height=32, child=render.Column(children=[spacer_h(10), centered_text("NO NFL GAME", "5x8")], cross_align="stretch")))
+    return render.Root(child=render.Box(color=BLACK, width=64, height=32, child=render.Column(children=[
+        spacer_h(10), render.Box(width=64, child=render.Row(children=[render.Text("NO NFL GAME", font="5x8", color=WHITE)], main_align="center"))
+    ], cross_align="stretch")))
 
 def main(config):
     games = selected_games(config)
