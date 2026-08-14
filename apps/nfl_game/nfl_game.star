@@ -72,9 +72,10 @@ def record_text(competitor):
         if type(record) == "dict" and s(record.get("summary"), "") != "": return s(record.get("summary"), "")
     return ""
 
-def logo_node(meta, size):
+def logo_node(meta, width, height=None):
+    if height == None: height = width
     img = logo_bytes(meta["logo"])
-    if img != None: return render.Image(img, width=size, height=size)
+    if img != None: return render.Image(img, width=width, height=height)
     return render.Text(meta["code"][0], font="6x13", color=WHITE)
 
 def team_tile(meta, score, possession):
@@ -89,7 +90,9 @@ def team_tile(meta, score, possession):
     ], main_align="start", cross_align="center"))
 
 def pregame_team_tile(meta, record):
-    logo = logo_node(meta, 16)
+    # Next logical logo size: use the full 20px-wide logo region while keeping
+    # height locked to the 16px team row, so nothing else in the layout moves.
+    logo = logo_node(meta, 20, 16)
     record_node = spacer_w(15)
     if record != "":
         record_node = render.Box(width=15, height=16, child=render.Row(children=[render.Text(record, font="CG-pixel-3x5-mono", color=WHITE)], main_align="center", cross_align="center"))
