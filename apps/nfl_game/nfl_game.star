@@ -124,8 +124,8 @@ def pregame_time_row(hour, minute, color, width):
     colon = render.Box(width=1, height=8, child=render.Column(children=[
         spacer_h(1), render.Box(width=1, height=1, color=color), spacer_h(3), render.Box(width=1, height=1, color=color), spacer_h(2),
     ], main_align="start", cross_align="center"))
-    return render.Box(width=width, height=14, child=render.Row(children=[
-        render.Text(hour, font="CG-pixel-3x5-mono", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="CG-pixel-3x5-mono", color=color),
+    return render.Box(width=width, height=15, child=render.Row(children=[
+        render.Text(hour, font="5x8", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="5x8", color=color),
     ], main_align="center", cross_align="center"))
 
 def preview_panel(g, config, width=28):
@@ -133,8 +133,8 @@ def preview_panel(g, config, width=28):
     time_color = s(config.get("pregame_time_color"), WHITE)
     return render.Box(width=width, height=32, child=render.Column(children=[
         spacer_h(1),
-        compact_preview_row(g["weekday_text"], width, 6, "tom-thumb", date_color),
-        compact_preview_row(g["date_text"], width, 10, "tom-thumb", date_color),
+        compact_preview_row(g["weekday_text"], width, 7, "tom-thumb", date_color),
+        compact_preview_row(g["date_text"], width, 8, "tom-thumb", date_color),
         pregame_time_row(g["clock_hour"], g["clock_minute"], time_color, width),
         spacer_h(1),
     ], main_align="start", cross_align="stretch"))
@@ -156,8 +156,6 @@ def final_panel(config):
 
 def render_game(g, config):
     if g["state"] == "pre":
-        # 64 pixels cannot divide into three integer-equal widths, so use the
-        # closest possible split: 21 + 21 + 22 = 64.
         return render.Box(color=BLACK, width=64, height=32, child=render.Row(children=[
             pregame_team_column(g["away"], g["away_record"], 21),
             pregame_team_column(g["home"], g["home_record"], 21),
