@@ -119,9 +119,11 @@ def centered_panel_row(text, height, font, color):
 def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
+    # Give the compact date only 11px of vertical space and the kickoff time
+    # the remaining 21px. This moves the time upward while allowing a larger font.
     return render.Box(width=28, height=32, child=render.Column(children=[
-        centered_panel_row(g["date_text"], 16, "tom-thumb", date_color),
-        centered_panel_row(g["clock_text"], 16, "5x8", time_color),
+        centered_panel_row(g["date_text"], 11, "tom-thumb", date_color),
+        centered_panel_row(g["clock_text"], 21, "6x13", time_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -174,7 +176,6 @@ def get_games(config):
     if type(data)!="dict": return []
     events=data.get("events")
     if type(events)!="list": return []
-    # Railway commonly runs in UTC. Do not inherit server timezone for user-facing NFL kickoff times.
     tz=s(config.get("timezone"),"America/New_York")
     games=[]
     for event in events:
