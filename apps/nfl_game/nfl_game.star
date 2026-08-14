@@ -101,10 +101,19 @@ def shifted_team_text(text, width, height, font):
         render.Box(width=width-1, height=height, child=render.Row(children=[render.Text(text, font=font, color=WHITE)], main_align="center", cross_align="center")),
     ], main_align="start", cross_align="center"))
 
+def shifted_team_text_down(text, width, height, font):
+    return render.Box(width=width, height=height, child=render.Column(children=[
+        spacer_h(1),
+        render.Box(width=width, height=height-1, child=render.Row(children=[
+            spacer_w(1),
+            render.Box(width=width-1, height=height-1, child=render.Row(children=[render.Text(text, font=font, color=WHITE)], main_align="center", cross_align="center")),
+        ], main_align="start", cross_align="center")),
+    ], main_align="start", cross_align="stretch"))
+
 def pregame_team_column(meta, record, width):
     logo = logo_node(meta, width, 18)
     return render.Box(color=meta["bg"], width=width, height=32, child=render.Column(children=[
-        shifted_team_text(meta["code"], width, 6, "tom-thumb"),
+        shifted_team_text_down(meta["code"], width, 6, "tom-thumb"),
         render.Box(width=width, height=18, child=render.Row(children=[logo], main_align="center", cross_align="center")),
         shifted_team_text(record, width, 8, "CG-pixel-3x5-mono"),
     ], main_align="start", cross_align="stretch"))
@@ -131,7 +140,7 @@ def pregame_date_row(month, day, color, width):
     right_width = width - left_width
     return render.Box(width=width, height=8, child=render.Row(children=[
         render.Box(width=left_width, height=8, child=render.Row(children=[spacer_w(1), render.Text(month, font="tom-thumb", color=color)], main_align="end", cross_align="center")),
-        render.Box(width=right_width, height=8, child=render.Row(children=[spacer_w(2), render.Text(day, font="tom-thumb", color=color), spacer_w(1)], main_align="start", cross_align="center")),
+        render.Box(width=right_width, height=8, child=render.Row(children=[spacer_w(3), render.Text(day, font="tom-thumb", color=color)], main_align="start", cross_align="center")),
     ], main_align="start", cross_align="center"))
 
 def pregame_time_row(hour, minute, color, width):
