@@ -95,15 +95,12 @@ def game_team_tile(meta, score, possession, live):
         render.Box(width=20, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), info,
     ], main_align="start", cross_align="center"))
 
-def pregame_team_column(meta, record):
-    # Pregame-only vertical team card. Two 18px team columns plus the existing
-    # 28px game-info column fill the 64px display exactly: 18 + 18 + 28.
-    # Abbreviation sits above the largest practical centered logo; record sits below.
-    logo = logo_node(meta, 18, 18)
-    return render.Box(color=meta["bg"], width=18, height=32, child=render.Column(children=[
-        render.Box(width=18, height=6, child=render.Row(children=[render.Text(meta["code"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
-        render.Box(width=18, height=18, child=render.Row(children=[logo], main_align="center", cross_align="center")),
-        render.Box(width=18, height=8, child=render.Row(children=[render.Text(record, font="CG-pixel-3x5-mono", color=WHITE)], main_align="center", cross_align="center")),
+def pregame_team_column(meta, record, width):
+    logo = logo_node(meta, width, 18)
+    return render.Box(color=meta["bg"], width=width, height=32, child=render.Column(children=[
+        render.Box(width=width, height=6, child=render.Row(children=[render.Text(meta["code"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
+        render.Box(width=width, height=18, child=render.Row(children=[logo], main_align="center", cross_align="center")),
+        render.Box(width=width, height=8, child=render.Row(children=[render.Text(record, font="CG-pixel-3x5-mono", color=WHITE)], main_align="center", cross_align="center")),
     ], main_align="start", cross_align="stretch"))
 
 def left_panel(g):
@@ -118,27 +115,28 @@ def centered_panel_text(text, height, font, color):
         spacer_w(1), render.Box(width=27, height=height, child=render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")),
     ], main_align="start", cross_align="center"))
 
-def compact_preview_row(text, height, font, color):
-    return render.Box(width=28, height=height, child=render.Column(children=[
+def compact_preview_row(text, width, height, font, color):
+    return render.Box(width=width, height=height, child=render.Column(children=[
         render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
     ], main_align="center", cross_align="stretch"))
 
-def pregame_time_row(hour, minute, color):
-    colon = render.Box(width=1, height=10, child=render.Column(children=[
-        spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(3), render.Box(width=1, height=1, color=color), spacer_h(3),
+def pregame_time_row(hour, minute, color, width):
+    colon = render.Box(width=1, height=8, child=render.Column(children=[
+        spacer_h(1), render.Box(width=1, height=1, color=color), spacer_h(3), render.Box(width=1, height=1, color=color), spacer_h(2),
     ], main_align="start", cross_align="center"))
-    return render.Box(width=28, height=16, child=render.Row(children=[
-        render.Text(hour, font="6x10-rounded", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="6x10-rounded", color=color),
+    return render.Box(width=width, height=14, child=render.Row(children=[
+        render.Text(hour, font="CG-pixel-3x5-mono", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="CG-pixel-3x5-mono", color=color),
     ], main_align="center", cross_align="center"))
 
-def preview_panel(g, config):
+def preview_panel(g, config, width=28):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
-    return render.Box(width=28, height=32, child=render.Column(children=[
+    return render.Box(width=width, height=32, child=render.Column(children=[
         spacer_h(1),
-        compact_preview_row(g["weekday_text"], 6, "tom-thumb", date_color),
-        compact_preview_row(g["date_text"], 9, "CG-pixel-3x5-mono", date_color),
-        pregame_time_row(g["clock_hour"], g["clock_minute"], time_color),
+        compact_preview_row(g["weekday_text"], width, 6, "tom-thumb", date_color),
+        compact_preview_row(g["date_text"], width, 10, "tom-thumb", date_color),
+        pregame_time_row(g["clock_hour"], g["clock_minute"], time_color, width),
+        spacer_h(1),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -158,11 +156,12 @@ def final_panel(config):
 
 def render_game(g, config):
     if g["state"] == "pre":
-        # Pregame is intentionally the only three-column state.
+        # 64 pixels cannot divide into three integer-equal widths, so use the
+        # closest possible split: 21 + 21 + 22 = 64.
         return render.Box(color=BLACK, width=64, height=32, child=render.Row(children=[
-            pregame_team_column(g["away"], g["away_record"]),
-            pregame_team_column(g["home"], g["home_record"]),
-            preview_panel(g, config),
+            pregame_team_column(g["away"], g["away_record"], 21),
+            pregame_team_column(g["home"], g["home_record"], 21),
+            preview_panel(g, config, 22),
         ], main_align="start", cross_align="start"))
     right = live_panel(g, config) if g["state"] == "live" else final_panel(config)
     return render.Box(color=BLACK, child=render.Row(children=[left_panel(g), right], main_align="start", cross_align="start"))
