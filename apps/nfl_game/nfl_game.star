@@ -113,6 +113,14 @@ def compact_preview_row(text, height, font, color):
         render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
     ], main_align="center", cross_align="stretch"))
 
+def pregame_time_row(hour, minute, color):
+    colon = render.Box(width=1, height=10, child=render.Column(children=[
+        spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(3), render.Box(width=1, height=1, color=color), spacer_h(3),
+    ], main_align="start", cross_align="center"))
+    return render.Box(width=28, height=16, child=render.Row(children=[
+        render.Text(hour, font="6x10-rounded", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="6x10-rounded", color=color),
+    ], main_align="center", cross_align="center"))
+
 def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
@@ -120,7 +128,7 @@ def preview_panel(g, config):
         spacer_h(1),
         compact_preview_row(g["weekday_text"], 6, "tom-thumb", date_color),
         compact_preview_row(g["date_text"], 9, "CG-pixel-3x5-mono", date_color),
-        compact_preview_row(g["clock_text"], 16, "6x10-rounded", time_color),
+        pregame_time_row(g["clock_hour"], g["clock_minute"], time_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -159,7 +167,7 @@ def parse_competition(event, timezone):
     situation=comp.get("situation"); possession=""; down_distance=""; field_position=""
     if type(situation)=="dict":
         possession=s(situation.get("possession"),""); down_distance=s(situation.get("shortDownDistanceText"),s(situation.get("downDistanceText"),"")); field_position=s(situation.get("possessionText"),"")
-    date_raw=s(event.get("date"),""); weekday_text="TBD"; date_text="TBD"; clock_text="TBD"
+    date_raw=s(event.get("date"),""); weekday_text="TBD"; date_text="TBD"; clock_text="TBD"; clock_hour=""; clock_minute=""
     if date_raw!="":
         parse_date=date_raw
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
@@ -167,7 +175,9 @@ def parse_competition(event, timezone):
         weekday_text=t.format("Mon").upper()
         date_text=t.format("Jan 2").upper()
         clock_text=t.format("3:04")
-    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"clock_text":clock_text}
+        clock_hour=t.format("3")
+        clock_minute=t.format("04")
+    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute}
 
 def get_games(config):
     data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30)
