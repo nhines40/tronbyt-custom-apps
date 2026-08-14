@@ -111,16 +111,21 @@ def centered_panel_text(text, font="5x8", color=WHITE):
         render.Box(width=27, child=render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")),
     ], main_align="start", cross_align="center"))
 
+def centered_panel_row(text, height, font, color):
+    return render.Box(width=28, height=height, child=render.Row(children=[
+        spacer_w(1),
+        render.Box(width=27, height=height, child=render.Column(children=[
+            render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
+        ], main_align="center", cross_align="stretch")),
+    ], main_align="start", cross_align="center"))
+
 def preview_panel(g, config):
     date_color = s(config.get("pregame_date_color"), WHITE)
     time_color = s(config.get("pregame_time_color"), WHITE)
-    # Date + kickoff time only. Location intentionally omitted.
-    # Use the original clock_text path that rendered correctly before 8c396.
+    # Mirror MLB preview structure: two fixed 16px rows so both lines always render.
     return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(3),
-        centered_panel_text(g["date_text"], "CG-pixel-3x5-mono", date_color),
-        spacer_h(3),
-        centered_panel_text(g["clock_text"], "5x8", time_color),
+        centered_panel_row(g["date_text"], 16, "CG-pixel-3x5-mono", date_color),
+        centered_panel_row(g["clock_text"], 16, "5x8", time_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
