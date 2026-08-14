@@ -33,8 +33,6 @@ TEAM_NAMES = {
     "SEA":"Seattle Seahawks", "TB":"Tampa Bay Buccaneers", "TEN":"Tennessee Titans", "WSH":"Washington Commanders",
 }
 
-# Throwback identities are isolated from rendering. Automatic schedule mappings can be
-# added/updated annually without changing the renderer. Rams intentionally Standard-only.
 THROWBACK = {
     "ATL":{"name":"Throwback","bg":"#A71930"}, "BUF":{"name":"Throwback","bg":"#00338D"},
     "CHI":{"name":"1936 Throwback","bg":"#0B162A"}, "CLE":{"name":"Classic Throwback","bg":"#311D00"},
@@ -49,7 +47,6 @@ THROWBACK = {
     "WSH":{"name":"Super Bowl Era","bg":"#5A1414"},
 }
 
-# Populate only confirmed special games. Missing entries always mean Standard.
 THROWBACK_SCHEDULE = {"2026": {}}
 
 def spacer_w(w): return render.Box(width=w, height=1)
@@ -174,7 +171,10 @@ def parse_competition(event, timezone):
     date_raw = s(event.get("date"), "")
     date_text = "TBD"; time_text = "TBD"
     if date_raw != "":
-        t = time.parse_time(date_raw).in_location(timezone)
+        parse_date = date_raw
+        if len(date_raw) == 17 and date_raw[16] == "Z":
+            parse_date = date_raw[:16] + ":00Z"
+        t = time.parse_time(parse_date).in_location(timezone)
         date_text = t.format("MON 1/2").upper()
         time_text = t.format("3:04 PM")
     return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"state":state,
