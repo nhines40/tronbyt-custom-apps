@@ -89,7 +89,6 @@ def team_tile(meta, score, possession):
     ], main_align="start", cross_align="center"))
 
 def pregame_team_tile(meta, record):
-    # 16x16 is the maximum square logo that remains fully inside a 16px-high team tile.
     logo = logo_node(meta, 16)
     record_node = spacer_w(15)
     if record != "":
@@ -106,8 +105,6 @@ def left_panel(g):
         team_tile(g["home"], g["home_score"], g["possession"] == g["home"]["code"] and g["state"] == "live"),
     ]))
 
-# Right-side text is deliberately shifted one physical pixel right. The visible
-# content was optically one pixel left even when mathematically centered in 28px.
 def centered_panel_text(text, font="5x8", color=WHITE):
     return render.Box(width=28, child=render.Row(children=[
         spacer_w(1),
@@ -122,7 +119,7 @@ def preview_panel(g, config):
         spacer_h(1),
         centered_panel_text(g["date_text"], "CG-pixel-3x5-mono", date_color),
         spacer_h(2),
-        centered_panel_text(g["time_text"], "CG-pixel-3x5-mono", time_color),
+        centered_panel_text(g["time_text"], "5x8", time_color),
         spacer_h(2),
         centered_panel_text("AT " + g["home"]["code"], "CG-pixel-3x5-mono", location_color),
     ], main_align="start", cross_align="stretch"))
@@ -167,7 +164,7 @@ def parse_competition(event, timezone):
     if date_raw!="":
         parse_date=date_raw
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
-        t=time.parse_time(parse_date).in_location(timezone); date_text=t.format("MON 1/2").upper(); time_text=t.format("3:04 PM")
+        t=time.parse_time(parse_date).in_location(timezone); date_text=t.format("MON 1/2").upper(); time_text=t.format("3:04")
     return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"date_text":date_text,"time_text":time_text}
 
 def get_games(config):
