@@ -85,27 +85,47 @@ def team_meta(team):
     if col == "" or col == "#000000" or col == "#ffffff": col = TEAM_BG.get(code, "#202020")
     return {"code":code, "bg":col, "logo":s(team.get("logo"), "")}
 
-def team_tile(meta, score, possession):
+def logo_node(meta, size):
     img = logo_bytes(meta["logo"])
-    logo = render.Text(meta["code"][0], font="6x13", color=WHITE)
     if img != None:
-        logo = render.Image(img, width=14, height=14)
+        return render.Image(img, width=size, height=size)
+    return render.Text(meta["code"][0], font="6x13", color=WHITE)
+
+# Live/final team tile: logo is pushed to the full 16px tile height.
+# Abbreviation remains white; score is centered directly underneath it.
+def team_tile(meta, score, possession):
+    logo = logo_node(meta, 16)
     dot = render.Box(width=3, height=3, color=WHITE) if possession else spacer_w(3)
+    info = render.Box(width=13, height=16, child=render.Column(children=[
+        spacer_h(1),
+        render.Row(children=[render.Text(meta["code"], font="CG-pixel-3x5-mono", color=WHITE)], main_align="center", cross_align="center"),
+        spacer_h(1),
+        render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="center", cross_align="center"),
+    ], main_align="start", cross_align="stretch"))
     return render.Box(
-        color=meta["bg"], height=16, padding=1,
+        color=meta["bg"], height=16,
         child=render.Row(children=[
-            render.Box(width=14, child=render.Row(children=[logo], main_align="center", cross_align="center")),
-            spacer_w(4),
-            render.Box(width=11, child=render.Column(children=[
-                render.Row(children=[render.Text(meta["code"], font="CG-pixel-3x5-mono", color=WHITE)], main_align="start"),
-                spacer_h(2),
-                render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="start"),
-            ])),
+            render.Box(width=16, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")),
+            spacer_w(2),
+            info,
+            spacer_w(2),
             dot,
         ], main_align="start", cross_align="center"),
     )
 
+# Pregame does not show abbreviation or 0 score. Each half of the left panel
+# is dedicated entirely to that team's logo on its team-color background.
+def pregame_team_tile(meta):
+    logo = logo_node(meta, 16)
+    return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(
+        children=[logo], main_align="center", cross_align="center"))
+
 def left_panel(g):
+    if g["state"] == "pre":
+        return render.Box(width=36, child=render.Column(children=[
+            pregame_team_tile(g["away"]),
+            pregame_team_tile(g["home"]),
+        ]))
     return render.Box(width=36, child=render.Column(children=[
         team_tile(g["away"], g["away_score"], g["possession"] == g["away"]["code"] and g["state"] == "live"),
         team_tile(g["home"], g["home_score"], g["possession"] == g["home"]["code"] and g["state"] == "live"),
@@ -114,11 +134,17 @@ def left_panel(g):
 def centered_text(text, font="5x8", color=WHITE):
     return render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")
 
-def preview_panel(g):
+def preview_panel(g, config):
+    date_color = s(config.get("pregame_date_color"), WHITE)
+    time_color = s(config.get("pregame_time_color"), WHITE)
+    location_color = s(config.get("pregame_location_color"), WHITE)
     return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(3), centered_text(g["date_text"], "CG-pixel-3x5-mono"),
-        spacer_h(4), centered_text(g["time_text"], "5x8"),
-        spacer_h(4), centered_text("AT " + g["home"]["code"], "CG-pixel-3x5-mono"),
+        spacer_h(4),
+        centered_text(g["date_text"], "CG-pixel-3x5-mono", date_color),
+        spacer_h(2),
+        centered_text(g["time_text"], "5x8", time_color),
+        spacer_h(3),
+        centered_text("AT " + g["home"]["code"], "CG-pixel-3x5-mono", location_color),
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
@@ -127,19 +153,26 @@ def live_panel(g, config):
     dc = s(config.get("down_color"), WHITE)
     fc = s(config.get("field_color"), WHITE)
     return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(1), centered_text(g["quarter"], "CG-pixel-3x5-mono", qc),
-        spacer_h(2), centered_text(g["clock"], "6x10-rounded", tc),
-        spacer_h(3), centered_text(g["down_distance"], "CG-pixel-3x5-mono", dc),
-        spacer_h(3), centered_text(g["field_position"], "CG-pixel-3x5-mono", fc),
+        spacer_h(1),
+        centered_text(g["quarter"], "CG-pixel-3x5-mono", qc),
+        spacer_h(1),
+        centered_text(g["clock"], "6x10-rounded", tc),
+        spacer_h(1),
+        centered_text(g["down_distance"], "CG-pixel-3x5-mono", dc),
+        spacer_h(1),
+        centered_text(g["field_position"], "CG-pixel-3x5-mono", fc),
     ], main_align="start", cross_align="stretch"))
 
-def final_panel():
-    return render.Box(width=28, height=32, child=render.Column(children=[spacer_h(11), centered_text("FINAL", "6x10-rounded")], cross_align="stretch"))
+def final_panel(config):
+    final_color = s(config.get("final_color"), WHITE)
+    return render.Box(width=28, height=32, child=render.Column(children=[
+        spacer_h(11), centered_text("FINAL", "6x10-rounded", final_color)
+    ], cross_align="stretch"))
 
 def render_game(g, config):
-    right = preview_panel(g)
+    right = preview_panel(g, config)
     if g["state"] == "live": right = live_panel(g, config)
-    if g["state"] == "final": right = final_panel()
+    if g["state"] == "final": right = final_panel(config)
     return render.Box(color=BLACK, child=render.Row(children=[left_panel(g), right], main_align="start", cross_align="start"))
 
 def parse_competition(event, timezone):
@@ -218,10 +251,14 @@ def get_schema():
     return schema.Schema(version="1", fields=[
         schema.Dropdown(id="mode", name="Game Mode", desc="Track one team or cycle all NFL games.", icon="gear", default="team", options=[schema.Option(display="Specific Team", value="team"), schema.Option(display="All Games", value="all")]),
         schema.Dropdown(id="team", name="Team Focus", desc="Team used in Specific Team mode.", icon="gear", default="PHI", options=teamOptions),
+        schema.Color(id="pregame_date_color", name="Pregame Date Color", desc="Pregame date color.", icon="brush", default=WHITE),
+        schema.Color(id="pregame_time_color", name="Pregame Time Color", desc="Pregame kickoff-time color.", icon="brush", default=WHITE),
+        schema.Color(id="pregame_location_color", name="Pregame Location Color", desc="Pregame location/home-team color.", icon="brush", default=WHITE),
         schema.Color(id="quarter_color", name="Quarter Color", desc="Live-game quarter color.", icon="brush", default=WHITE),
         schema.Color(id="clock_color", name="Clock Color", desc="Live-game clock color.", icon="brush", default=WHITE),
         schema.Color(id="down_color", name="Down & Distance Color", desc="Live-game down and distance color.", icon="brush", default=WHITE),
         schema.Color(id="field_color", name="Field Position Color", desc="Live-game field position color.", icon="brush", default=WHITE),
+        schema.Color(id="final_color", name="Final Color", desc="Final-state text color.", icon="brush", default=WHITE),
     ])
 
 teamOptions = [schema.Option(display=TEAM_NAMES[k], value=k) for k in TEAM_NAMES]
