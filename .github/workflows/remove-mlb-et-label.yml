@@ -1,0 +1,36 @@
+name: Remove MLB ET Label
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/remove-mlb-et-label.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Remove ET label from MLB pregame time
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('apps/mlb_game/mlb_game.star')
+          s = p.read_text()
+          old = '    return parsed.format("3:04") + " ET"\n'
+          new = '    return parsed.format("3:04")\n'
+          if old not in s:
+              raise SystemExit('Expected ET suffix line not found; refusing to modify file')
+          p.write_text(s.replace(old, new, 1))
+      - name: Commit display fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/mlb_game/mlb_game.star
+          git commit -m "Show MLB pregame time without ET suffix"
+          git push origin main
