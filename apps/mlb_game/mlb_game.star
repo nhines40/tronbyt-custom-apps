@@ -52,11 +52,13 @@ def int_from_digits(s, d):
 def default_game():
     return {
         "away": "PIT", "home": "PHI", "ascore": 0, "hscore": 0,
+        "away_record": "0-0", "home_record": "0-0",
         "inning": "1", "top": True, "balls": 0, "strikes": 0, "outs": 0,
         "on1": False, "on2": False, "on3": False,
         "away_bg": "#27251F", "home_bg": "#E81828",
         "away_logo_url": "", "home_logo_url": "",
         "is_final": False, "is_preview": False, "start_text": "",
+        "weekday_text": "TBD", "month_text": "", "day_text": "",
         "game_label": "", "has_game": False, "fetch_ok": False,
     }
 
@@ -323,16 +325,24 @@ def select_game_info(games, include_exhibition, mlb_ids, team_code):
     label = "G" + str(best_index) if len(ordered) > 1 else ""
     return {"game":best,"game_label":label}
 
-def tz_suffix(tz):
-    if tz == "America/New_York": return "ET"
-    return ""
-
 def format_start_text(game_date, timezone):
     if type(game_date) != "string" or len(game_date) < 16: return "TBD"
-    # Always display game start times in Eastern Time. America/New_York automatically handles EST/EDT.
-    tz = "America/New_York"
-    parsed = time.parse_time(game_date).in_location(tz)
+    parsed = time.parse_time(game_date).in_location("America/New_York")
     return parsed.format("3:04")
+
+def format_date_parts(game_date):
+    if type(game_date) != "string" or len(game_date) < 16: return {"weekday":"TBD","month":"","day":""}
+    parsed = time.parse_time(game_date).in_location("America/New_York")
+    return {"weekday":parsed.format("Mon").upper(),"month":parsed.format("Jan").upper(),"day":parsed.format("2")}
+
+def record_text(team_info):
+    if type(team_info) != "dict": return "0-0"
+    league_record = team_info.get("leagueRecord")
+    if type(league_record) == "dict":
+        wins = as_int(league_record.get("wins"), 0)
+        losses = as_int(league_record.get("losses"), 0)
+        return str(wins) + "-" + str(losses)
+    return "0-0"
 
 def base_diamond(filled):
     rows = []
@@ -373,17 +383,40 @@ def count_tile(inning,top_half,balls,strikes,outs,label):
     left=render.Box(width=10,height=16,child=render.Column(children=left_top+[render.Row(children=[render.Column(children=[spacer_h(3),tiny_arrow(top_half)]),spacer_w(1),render.Text(str(inning),font="5x8")],main_align="start")],main_align="start",cross_align="start"))
     right=render.Box(width=18,child=render.Column(children=[spacer_h(1),render.Row(children=[render.Text(str(balls)+"-"+str(strikes),font="5x8")],main_align="center"),spacer_h(1),render.Row(children=[outs_row(outs)],main_align="center")],main_align="start",cross_align="center"))
     return render.Box(height=16,child=render.Row(children=[spacer_w(1),left,right],main_align="start",cross_align="start"))
-def team_tile(bg,code,score,logo_url):
+
+def team_tile(bg,code,value,logo_url,is_preview):
     fg=team_font_color(bg)
     left=render.Box(width=14,child=render.Row(children=[team_logo_sprite(code,fg,logo_url)],main_align="center"))
-    right=render.Box(width=15,child=render.Column(children=[render.Text(code,font="CG-pixel-3x5-mono",color=fg),spacer_h(2),render.Text(str(score),font="5x8",color=fg)],main_align="start",cross_align="start"))
+    bottom_font="CG-pixel-3x5-mono" if is_preview else "5x8"
+    right=render.Box(width=15,height=14,child=render.Column(children=[
+        render.Box(width=15,height=6,child=render.Row(children=[render.Text(code,font="tom-thumb",color=fg)],main_align="center",cross_align="center")),
+        render.Box(width=15,height=8,child=render.Row(children=[render.Text(str(value),font=bottom_font,color=fg)],main_align="center",cross_align="center")),
+    ],main_align="start",cross_align="stretch"))
     return render.Box(color=bg,height=16,padding=1,child=render.Row(children=[left,spacer_w(4),right],main_align="start",cross_align="center"))
+
 def left_panel(data):
-    return render.Box(width=36,child=render.Column(children=[team_tile(data["away_bg"],data["away"],data["ascore"],data["away_logo_url"]),team_tile(data["home_bg"],data["home"],data["hscore"],data["home_logo_url"])],main_align="start",cross_align="stretch"))
+    away_value=data["away_record"] if data["is_preview"] else data["ascore"]
+    home_value=data["home_record"] if data["is_preview"] else data["hscore"]
+    return render.Box(width=36,child=render.Column(children=[
+        team_tile(data["away_bg"],data["away"],away_value,data["away_logo_url"],data["is_preview"]),
+        team_tile(data["home_bg"],data["home"],home_value,data["home_logo_url"],data["is_preview"]),
+    ],main_align="start",cross_align="stretch"))
+
+def pregame_date_tile(data):
+    return render.Box(width=28,height=16,child=render.Column(children=[
+        spacer_h(1),
+        render.Box(width=28,height=6,child=render.Row(children=[render.Text(data["weekday_text"],font="tom-thumb")],main_align="center",cross_align="center")),
+        render.Box(width=28,height=8,child=render.Row(children=[
+            render.Text(data["month_text"],font="tom-thumb"),spacer_w(2),render.Text(data["day_text"],font="tom-thumb"),
+        ],main_align="center",cross_align="center")),
+        spacer_h(1),
+    ],main_align="start",cross_align="stretch"))
+
 def right_panel(data):
-    if data["is_final"] or data["is_preview"]:
-        text="Final" if data["is_final"] else data["start_text"]
-        return render.Box(width=28,child=render.Column(children=[game_label_tile(data["game_label"]),status_tile(text)],main_align="start",cross_align="stretch"))
+    if data["is_preview"]:
+        return render.Box(width=28,child=render.Column(children=[pregame_date_tile(data),status_tile(data["start_text"])],main_align="start",cross_align="stretch"))
+    if data["is_final"]:
+        return render.Box(width=28,child=render.Column(children=[game_label_tile(data["game_label"]),status_tile("Final")],main_align="start",cross_align="stretch"))
     return render.Box(width=29,child=render.Column(children=[bases_tile(data["on1"],data["on2"],data["on3"]),count_tile(data["inning"],data["top"],data["balls"],data["strikes"],data["outs"],data["game_label"])],main_align="start",cross_align="stretch"))
 
 def get_game_data(config):
@@ -409,7 +442,13 @@ def get_game_data(config):
     if type(status)=="dict":
         state=as_str(status.get("abstractGameState"),""); detailed=as_str(status.get("detailedState"),"")
         data["is_final"]=state=="Final"; data["is_preview"]=state=="Preview" or detailed=="Scheduled" or detailed=="Pre-Game"
-    if data["is_preview"]: data["start_text"]=format_start_text(as_str(game.get("gameDate"),""),None)
+    game_date=as_str(game.get("gameDate"),"")
+    if data["is_preview"]:
+        data["start_text"]=format_start_text(game_date,None)
+        date_parts=format_date_parts(game_date)
+        data["weekday_text"]=date_parts["weekday"]
+        data["month_text"]=date_parts["month"]
+        data["day_text"]=date_parts["day"]
     teams=game.get("teams")
     if type(teams)=="dict":
         away_info=teams.get("away"); home_info=teams.get("home")
@@ -418,6 +457,7 @@ def get_game_data(config):
             away_color=as_str(away_meta.get("color"),"") if type(away_meta)=="dict" else ""; home_color=as_str(home_meta.get("color"),"") if type(home_meta)=="dict" else ""
             away_logo=as_str(away_meta.get("logo"),"") if type(away_meta)=="dict" else ""; home_logo=as_str(home_meta.get("logo"),"") if type(home_meta)=="dict" else ""
             data["away"]=away_code; data["home"]=home_code; data["ascore"]=as_int(away_info.get("score"),0); data["hscore"]=as_int(home_info.get("score"),0)
+            data["away_record"]=record_text(away_info); data["home_record"]=record_text(home_info)
             data["away_bg"]=team_bg_for(away_code,away_color); data["home_bg"]=team_bg_for(home_code,home_color); data["away_logo_url"]=away_logo; data["home_logo_url"]=home_logo
     linescore=game.get("linescore")
     if type(linescore)=="dict":
