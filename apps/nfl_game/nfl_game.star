@@ -82,14 +82,16 @@ def game_team_tile(meta, score, possession, live):
     logo_width = 17 if live else 20
     info_width = 15
     logo = logo_node(meta, logo_width, 16)
+    score_children = [render.Text(str(score), font="5x8", color=WHITE)]
+    if live and possession:
+        score_children = score_children + [spacer_w(1), render.Box(width=3, height=3, color=WHITE)]
     info = render.Box(width=info_width, height=16, child=render.Column(children=[
         render.Box(width=info_width, height=7, child=render.Row(children=[render.Text(meta["code"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
-        render.Box(width=info_width, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="center", cross_align="center")),
+        render.Box(width=info_width, height=9, child=render.Row(children=score_children, main_align="center", cross_align="center")),
     ], main_align="start", cross_align="stretch"))
     if live:
-        dot = render.Box(width=3, height=16, child=render.Column(children=[render.Box(width=3, height=3, color=WHITE) if possession else spacer_w(3)], main_align="center", cross_align="center"))
         return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
-            render.Box(width=17, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), info, dot,
+            render.Box(width=17, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), info,
         ], main_align="start", cross_align="center"))
     return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
         render.Box(width=20, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), info,
@@ -166,12 +168,12 @@ def preview_panel(g, config, width=28):
     ], main_align="start", cross_align="stretch"))
 
 def live_panel(g, config):
-    qc=s(config.get("quarter_color"),WHITE); tc=s(config.get("clock_color"),WHITE); dc=s(config.get("down_color"),WHITE); fc=s(config.get("field_color"),WHITE)
+    qc=s(config.get("quarter_color"),WHITE); tc=s(config.get("clock_color"),WHITE); fc=s(config.get("field_color"),WHITE)
     return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(1),
+        spacer_h(4),
         centered_panel_text(g["quarter"], 6, "tom-thumb", qc),
         centered_panel_text(g["clock"], 10, "5x8", tc),
-        centered_panel_text(g["down_distance"], 7, "CG-pixel-3x5-mono", dc),
+        spacer_h(4),
         centered_panel_text(g["field_position"], 8, "CG-pixel-3x5-mono", fc),
     ], main_align="start", cross_align="stretch"))
 
@@ -206,7 +208,12 @@ def parse_competition(event, timezone):
     state_raw=s(stype.get("state")) if type(stype)=="dict" else "pre"
     state="live" if state_raw=="in" else ("final" if state_raw=="post" else "pre")
     display_clock=s(status.get("displayClock"),"") if type(status)=="dict" else ""; period=i(status.get("period"),0) if type(status)=="dict" else 0
-    quarter="Q"+str(period) if period>0 else ""
+    quarter=""
+    if period==1: quarter="1st"
+    elif period==2: quarter="2nd"
+    elif period==3: quarter="3rd"
+    elif period==4: quarter="4th"
+    elif period>4: quarter="OT"
     situation=comp.get("situation"); possession=""; down_distance=""; field_position=""
     if type(situation)=="dict":
         possession=s(situation.get("possession"),""); down_distance=s(situation.get("shortDownDistanceText"),s(situation.get("downDistanceText"),"")); field_position=s(situation.get("possessionText"),"")
@@ -261,7 +268,7 @@ def get_schema():
         schema.Dropdown(id="team",name="Team Focus",desc="Team used in Specific Team mode.",icon="gear",default="PHI",options=teamOptions),
         schema.Color(id="pregame_date_color",name="Pregame Date Color",desc="Pregame weekday/date color.",icon="brush",default=WHITE), schema.Color(id="pregame_time_color",name="Pregame Time Color",desc="Pregame kickoff-time color.",icon="brush",default=WHITE),
         schema.Color(id="quarter_color",name="Quarter Color",desc="Live-game quarter color.",icon="brush",default=WHITE),
-        schema.Color(id="clock_color",name="Clock Color",desc="Live-game clock color.",icon="brush",default=WHITE), schema.Color(id="down_color",name="Down & Distance Color",desc="Live-game down and distance color.",icon="brush",default=WHITE),
+        schema.Color(id="clock_color",name="Clock Color",desc="Live-game clock color.",icon="brush",default=WHITE),
         schema.Color(id="field_color",name="Field Position Color",desc="Live-game field position color.",icon="brush",default=WHITE), schema.Color(id="final_color",name="Final Color",desc="Final-state text color.",icon="brush",default=WHITE),
     ])
 
