@@ -1,0 +1,43 @@
+name: Force MLB Eastern Time
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/force-mlb-eastern.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Force MLB game times to America/New_York
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('apps/mlb_game/mlb_game.star')
+          s = p.read_text()
+          old = '''    tz = as_str(timezone, "")
+    if tz == "":
+        tz = as_str(time.tz(), "")
+    if tz == "":
+        tz = "America/New_York"
+'''
+          new = '''    # Always display MLB start times in Eastern Time; America/New_York handles EST/EDT automatically.
+    tz = "America/New_York"
+'''
+          if old not in s:
+              raise SystemExit('Expected timezone block not found; refusing to modify file')
+          p.write_text(s.replace(old, new, 1))
+      - name: Commit timezone fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/mlb_game/mlb_game.star
+          git commit -m "Force MLB game times to Eastern Time"
+          git push origin main
