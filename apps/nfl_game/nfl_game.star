@@ -184,8 +184,8 @@ def render_game(g, config):
     if g["state"] == "pre":
         return render.Box(color=BLACK, width=64, height=32, child=render.Row(children=[
             pregame_team_column(g["away"], g["away_record"], 21),
-            pregame_team_column(g["home"], g["home_record"], 21),
             preview_panel(g, config, 22),
+            pregame_team_column(g["home"], g["home_record"], 21),
         ], main_align="start", cross_align="start"))
     right = live_panel(g, config) if g["state"] == "live" else final_panel(config)
     return render.Box(color=BLACK, child=render.Row(children=[left_panel(g), right], main_align="start", cross_align="start"))
