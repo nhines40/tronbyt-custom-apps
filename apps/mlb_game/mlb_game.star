@@ -351,10 +351,22 @@ def count_tile(inning,top_half,balls,strikes,outs,label):
     return render.Box(height=16,child=render.Row(children=[spacer_w(1),left,right],main_align="start",cross_align="start"))
 
 def team_tile(bg,code,value,logo_url,is_preview):
-    fg=team_font_color(bg); left=render.Box(width=14,child=render.Row(children=[team_logo_sprite(code,fg,logo_url)],main_align="center")); bottom_font="CG-pixel-3x5-mono" if is_preview else "5x8"
-    right_width=17 if is_preview else 16; gap_width=2 if is_preview else 3
-    right=render.Box(width=right_width,height=14,child=render.Column(children=[render.Box(width=right_width,height=6,child=render.Row(children=[render.Text(code,font="tom-thumb",color=fg)],main_align="center",cross_align="center")),render.Box(width=right_width,height=8,child=render.Row(children=[render.Text(str(value),font=bottom_font,color=fg)],main_align="center",cross_align="center"))],main_align="start",cross_align="stretch"))
-    return render.Box(color=bg,height=16,padding=1,child=render.Row(children=[left,spacer_w(gap_width),right],main_align="start",cross_align="center"))
+    fg=team_font_color(bg)
+    left=render.Box(width=14,child=render.Row(children=[team_logo_sprite(code,fg,logo_url)],main_align="center"))
+    if is_preview:
+        # Use the full remaining pregame width for one shared center axis. This
+        # keeps the record midpoint/dash directly under the middle letter of
+        # the abbreviation and leaves the outer 1px panel padding intact.
+        right=render.Box(width=19,height=14,child=render.Column(children=[
+            render.Box(width=19,height=6,child=render.Row(children=[render.Text(code,font="tom-thumb",color=fg)],main_align="center",cross_align="center")),
+            render.Box(width=19,height=8,child=render.Row(children=[render.Text(str(value),font="CG-pixel-3x5-mono",color=fg)],main_align="center",cross_align="center")),
+        ],main_align="start",cross_align="stretch"))
+        return render.Box(color=bg,height=16,padding=1,child=render.Row(children=[left,spacer_w(1),right],main_align="start",cross_align="center"))
+    right=render.Box(width=15,height=14,child=render.Column(children=[
+        render.Box(width=15,height=6,child=render.Row(children=[render.Text(code,font="tom-thumb",color=fg)],main_align="center",cross_align="center")),
+        render.Box(width=15,height=8,child=render.Row(children=[render.Text(str(value),font="5x8",color=fg)],main_align="center",cross_align="center")),
+    ],main_align="start",cross_align="stretch"))
+    return render.Box(color=bg,height=16,padding=1,child=render.Row(children=[left,spacer_w(4),right],main_align="start",cross_align="center"))
 
 def left_panel(data):
     away_value=data["away_record"] if data["is_preview"] else data["ascore"]; home_value=data["home_record"] if data["is_preview"] else data["hscore"]
