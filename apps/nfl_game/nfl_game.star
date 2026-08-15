@@ -144,13 +144,13 @@ def pregame_date_row(month, day, color, width):
     ], main_align="start", cross_align="center"))
 
 def pregame_time_row(hour, minute, color, width):
-    colon = render.Box(width=1, height=10, child=render.Column(children=[
-        spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(3), render.Box(width=1, height=1, color=color), spacer_h(3),
+    colon = render.Box(width=1, height=8, child=render.Column(children=[
+        spacer_h(1), render.Box(width=1, height=1, color=color), spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(3),
     ], main_align="start", cross_align="center"))
     return render.Box(width=width, height=15, child=render.Column(children=[
         spacer_h(2),
         render.Box(width=width, height=13, child=render.Row(children=[
-            render.Text(hour, font="6x10-rounded", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="6x10-rounded", color=color),
+            render.Text(hour, font="5x8", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="5x8", color=color),
         ], main_align="center", cross_align="center")),
     ], main_align="start", cross_align="stretch"))
 
