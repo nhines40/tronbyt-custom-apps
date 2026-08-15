@@ -332,7 +332,7 @@ def format_start_text(game_date, timezone):
     # Always display game start times in Eastern Time. America/New_York automatically handles EST/EDT.
     tz = "America/New_York"
     parsed = time.parse_time(game_date).in_location(tz)
-    return parsed.format("3:04") + " ET"
+    return parsed.format("3:04")
 
 def base_diamond(filled):
     rows = []
