@@ -190,6 +190,10 @@ def live_clock_row(clock, color):
 
 def live_panel(g, config):
     qc=s(config.get("quarter_color"),WHITE); tc=s(config.get("clock_color"),WHITE); fc=s(config.get("field_color"),WHITE)
+    if g["halftime"]:
+        return render.Box(width=28, height=32, child=render.Column(children=[
+            centered_panel_text("HALFTIME", 32, "tom-thumb", qc),
+        ], main_align="center", cross_align="stretch"))
     return render.Box(width=28, height=32, child=render.Column(children=[
         spacer_h(4),
         centered_panel_text(g["quarter"], 6, "tom-thumb", qc),
@@ -238,6 +242,7 @@ def parse_competition(event, timezone):
     elif period==3: quarter="3rd"
     elif period==4: quarter="4th"
     elif period>4: quarter="OT"
+    halftime = state == "live" and period == 2 and (display_clock == "0:00" or display_clock == "0:00.0")
     situation=comp.get("situation"); possession=""; down_distance=""; field_position=""
     if type(situation)=="dict":
         possession_raw=s(situation.get("possession"),"")
@@ -257,7 +262,7 @@ def parse_competition(event, timezone):
         clock_text=t.format("3:04")
         clock_hour=t.format("3")
         clock_minute=t.format("04")
-    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute}
+    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"halftime":halftime,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute}
 
 def get_games(config):
     data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30)
