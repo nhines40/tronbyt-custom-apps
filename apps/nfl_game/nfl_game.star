@@ -182,7 +182,7 @@ def live_clock_row(clock, color):
     parts = clock.split(":")
     if len(parts) != 2: return centered_panel_text(clock, 10, "5x8", color)
     colon = render.Box(width=1, height=8, child=render.Column(children=[
-        spacer_h(1), render.Box(width=1, height=1, color=color), spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(3),
+        spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(2),
     ], main_align="start", cross_align="center"))
     return render.Box(width=28, height=10, child=render.Row(children=[
         render.Text(parts[0], font="5x8", color=color), spacer_w(1), colon, spacer_w(1), render.Text(parts[1], font="5x8", color=color),
