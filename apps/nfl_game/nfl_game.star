@@ -82,12 +82,18 @@ def game_team_tile(meta, score, possession, live):
     logo_width = 17 if live else 20
     info_width = 15
     logo = logo_node(meta, logo_width, 16)
-    score_children = [render.Text(str(score), font="5x8", color=WHITE)]
-    if live and possession:
-        score_children = score_children + [spacer_w(1), render.Box(width=3, height=3, color=WHITE)]
+    if live:
+        possession_box = render.Box(width=2, height=9, child=render.Column(children=[render.Box(width=2, height=2, color=WHITE) if possession else spacer_w(2)], main_align="center", cross_align="center"))
+        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[
+            spacer_w(2),
+            render.Box(width=11, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="center", cross_align="center")),
+            possession_box,
+        ], main_align="start", cross_align="center"))
+    else:
+        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="center", cross_align="center"))
     info = render.Box(width=info_width, height=16, child=render.Column(children=[
         render.Box(width=info_width, height=7, child=render.Row(children=[render.Text(meta["code"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
-        render.Box(width=info_width, height=9, child=render.Row(children=score_children, main_align="center", cross_align="center")),
+        score_row,
     ], main_align="start", cross_align="stretch"))
     if live:
         return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
@@ -177,7 +183,7 @@ def live_panel(g, config):
     return render.Box(width=28, height=32, child=render.Column(children=[
         spacer_h(4),
         centered_panel_text(g["quarter"], 6, "tom-thumb", qc),
-        centered_panel_text(g["clock"], 10, "6x10-rounded", tc),
+        centered_panel_text(g["clock"], 10, "5x8", tc),
         spacer_h(4),
         field_position_text(g["field_position"], 8, "CG-pixel-3x5-mono", fc),
     ], main_align="start", cross_align="stretch"))
