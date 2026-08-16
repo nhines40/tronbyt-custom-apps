@@ -178,12 +178,22 @@ def preview_panel(g, config, width=28):
         spacer_h(1),
     ], main_align="start", cross_align="stretch"))
 
+def live_clock_row(clock, color):
+    parts = clock.split(":")
+    if len(parts) != 2: return centered_panel_text(clock, 10, "5x8", color)
+    colon = render.Box(width=1, height=8, child=render.Column(children=[
+        spacer_h(1), render.Box(width=1, height=1, color=color), spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(3),
+    ], main_align="start", cross_align="center"))
+    return render.Box(width=28, height=10, child=render.Row(children=[
+        render.Text(parts[0], font="5x8", color=color), spacer_w(1), colon, spacer_w(1), render.Text(parts[1], font="5x8", color=color),
+    ], main_align="center", cross_align="center"))
+
 def live_panel(g, config):
     qc=s(config.get("quarter_color"),WHITE); tc=s(config.get("clock_color"),WHITE); fc=s(config.get("field_color"),WHITE)
     return render.Box(width=28, height=32, child=render.Column(children=[
         spacer_h(4),
         centered_panel_text(g["quarter"], 6, "tom-thumb", qc),
-        centered_panel_text(g["clock"], 10, "5x8", tc),
+        live_clock_row(g["clock"], tc),
         spacer_h(4),
         field_position_text(g["field_position"], 8, "CG-pixel-3x5-mono", fc),
     ], main_align="start", cross_align="stretch"))
