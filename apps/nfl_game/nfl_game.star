@@ -132,6 +132,11 @@ def centered_panel_text(text, height, font, color):
         spacer_w(1), render.Box(width=27, height=height, child=render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")),
     ], main_align="start", cross_align="center"))
 
+def field_position_text(text, height, font, color):
+    return render.Box(width=28, height=height, child=render.Row(children=[
+        spacer_w(2), render.Box(width=26, height=height, child=render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")),
+    ], main_align="start", cross_align="center"))
+
 def compact_preview_row(text, width, height, font, color):
     return render.Box(width=width, height=height, child=render.Column(children=[
         render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
@@ -172,9 +177,9 @@ def live_panel(g, config):
     return render.Box(width=28, height=32, child=render.Column(children=[
         spacer_h(4),
         centered_panel_text(g["quarter"], 6, "tom-thumb", qc),
-        centered_panel_text(g["clock"], 10, "5x8", tc),
+        centered_panel_text(g["clock"], 10, "6x10-rounded", tc),
         spacer_h(4),
-        centered_panel_text(g["field_position"], 8, "CG-pixel-3x5-mono", fc),
+        field_position_text(g["field_position"], 8, "CG-pixel-3x5-mono", fc),
     ], main_align="start", cross_align="stretch"))
 
 def final_panel(config):
@@ -197,12 +202,15 @@ def parse_competition(event, timezone):
     if type(comps) != "list" or len(comps) == 0: return None
     comp = comps[0]; competitors = comp.get("competitors")
     if type(competitors) != "list": return None
-    away=None; home=None; away_score=0; home_score=0; away_record=""; home_record=""
+    away=None; home=None; away_score=0; home_score=0; away_record=""; home_record=""; away_id=""; home_id=""
     for c in competitors:
         if type(c) != "dict": continue
-        m = team_meta(c.get("team"))
-        if s(c.get("homeAway")) == "away": away=m; away_score=score_int(c.get("score")); away_record=record_text(c)
-        if s(c.get("homeAway")) == "home": home=m; home_score=score_int(c.get("score")); home_record=record_text(c)
+        team=c.get("team")
+        m = team_meta(team)
+        cid=s(c.get("id"), "")
+        if cid=="" and type(team)=="dict": cid=s(team.get("id"), "")
+        if s(c.get("homeAway")) == "away": away=m; away_score=score_int(c.get("score")); away_record=record_text(c); away_id=cid
+        if s(c.get("homeAway")) == "home": home=m; home_score=score_int(c.get("score")); home_record=record_text(c); home_id=cid
     if away == None or home == None: return None
     status=event.get("status"); stype=status.get("type") if type(status)=="dict" else {}
     state_raw=s(stype.get("state")) if type(stype)=="dict" else "pre"
@@ -216,7 +224,11 @@ def parse_competition(event, timezone):
     elif period>4: quarter="OT"
     situation=comp.get("situation"); possession=""; down_distance=""; field_position=""
     if type(situation)=="dict":
-        possession=s(situation.get("possession"),""); down_distance=s(situation.get("shortDownDistanceText"),s(situation.get("downDistanceText"),"")); field_position=s(situation.get("possessionText"),"")
+        possession_raw=s(situation.get("possession"),"")
+        if possession_raw==away_id: possession=away["code"]
+        elif possession_raw==home_id: possession=home["code"]
+        elif possession_raw==away["code"] or possession_raw==home["code"]: possession=possession_raw
+        down_distance=s(situation.get("shortDownDistanceText"),s(situation.get("downDistanceText"),"")); field_position=s(situation.get("possessionText"),"")
     date_raw=s(event.get("date"),""); weekday_text="TBD"; date_text="TBD"; month_text=""; day_text=""; clock_text="TBD"; clock_hour=""; clock_minute=""
     if date_raw!="":
         parse_date=date_raw
