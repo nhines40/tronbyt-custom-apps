@@ -188,10 +188,11 @@ def preview_panel(g, config, width=28):
 
 def bye_center_panel():
     return render.Box(color=BLACK, width=22, height=32, child=render.Column(children=[
-        spacer_h(7),
+        spacer_h(6),
         compact_preview_row("BYE", 22, 9, "5x8", WHITE),
+        spacer_h(2),
         compact_preview_row("WEEK", 22, 9, "CG-pixel-3x5-mono", WHITE),
-        spacer_h(7),
+        spacer_h(6),
     ], main_align="start", cross_align="stretch"))
 
 def bye_next_panel(g):
@@ -199,14 +200,17 @@ def bye_next_panel(g):
     return render.Box(color=meta["bg"], width=21, height=32, child=render.Column(children=[
         compact_preview_row("NEXT", 21, 5, "tom-thumb", WHITE),
         compact_preview_row("GAME", 21, 5, "tom-thumb", WHITE),
-        compact_preview_row(g["weekday_text"], 21, 6, "tom-thumb", WHITE),
-        pregame_date_row(g["month_text"], g["day_text"], WHITE, 21),
+        render.Box(width=21, height=7, child=render.Row(children=[
+            render.Text(g["month_text"], font="tom-thumb", color=WHITE),
+            spacer_w(2),
+            render.Text(g["day_text"], font="tom-thumb", color=WHITE),
+        ], main_align="center", cross_align="center")),
         pregame_time_row(g["clock_hour"], g["clock_minute"], WHITE, 21),
-        spacer_h(1),
     ], main_align="start", cross_align="stretch"))
 
 def render_bye(g):
     return render.Box(color=BLACK, width=64, height=32, child=render.Row(children=[
+        # Deliberately use the exact same team column as the normal pregame screen.
         pregame_team_column(g["team"], g["record"], 21),
         bye_center_panel(),
         bye_next_panel(g),
