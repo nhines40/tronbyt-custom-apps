@@ -67,7 +67,9 @@ def team_meta(team):
     col = s(team.get("color"), "")
     if col != "" and col[0] != "#": col = "#" + col
     if col == "" or col == "#000000" or col == "#ffffff": col = TEAM_BG.get(code, "#202020")
-    return {"code":code, "bg":col, "logo":s(team.get("logo"), "")}
+    logo=s(team.get("logo"), "")
+    if logo=="" and code!="NFL": logo="https://a.espncdn.com/i/teamlogos/nfl/500/"+code.lower()+".png"
+    return {"code":code, "bg":col, "logo":logo}
 
 def record_text(competitor):
     if type(competitor) != "dict": return ""
@@ -89,191 +91,98 @@ def game_team_tile(meta, score, possession, live, score_color=WHITE):
     logo = logo_node(meta, logo_width, 16)
     if live:
         possession_box = render.Box(width=2, height=9, child=render.Column(children=[render.Box(width=2, height=2, color=WHITE) if possession else spacer_w(2)], main_align="center", cross_align="center"))
-        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[
-            spacer_w(2),
-            render.Box(width=11, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=score_color)], main_align="center", cross_align="center")),
-            possession_box,
-        ], main_align="start", cross_align="center"))
+        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[spacer_w(2),render.Box(width=11,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center")),possession_box],main_align="start",cross_align="center"))
     else:
-        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=score_color)], main_align="center", cross_align="center"))
-    info = render.Box(width=info_width, height=16, child=render.Column(children=[
-        render.Box(width=info_width, height=7, child=render.Row(children=[render.Text(meta["code"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
-        score_row,
-    ], main_align="start", cross_align="stretch"))
+        score_row=render.Box(width=info_width,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center"))
+    info=render.Box(width=info_width,height=16,child=render.Column(children=[render.Box(width=info_width,height=7,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),score_row],main_align="start",cross_align="stretch"))
     if live:
-        return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
-            render.Box(width=17, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), info,
-        ], main_align="start", cross_align="center"))
-    return render.Box(color=meta["bg"], width=36, height=16, child=render.Row(children=[
-        render.Box(width=20, height=16, child=render.Row(children=[logo], main_align="center", cross_align="center")), spacer_w(1), info,
-    ], main_align="start", cross_align="center"))
+        return render.Box(color=meta["bg"],width=36,height=16,child=render.Row(children=[render.Box(width=17,height=16,child=render.Row(children=[logo],main_align="center",cross_align="center")),spacer_w(1),info],main_align="start",cross_align="center"))
+    return render.Box(color=meta["bg"],width=36,height=16,child=render.Row(children=[render.Box(width=20,height=16,child=render.Row(children=[logo],main_align="center",cross_align="center")),spacer_w(1),info],main_align="start",cross_align="center"))
 
-def shifted_team_text(text, width, height, font):
-    return render.Box(width=width, height=height, child=render.Row(children=[
-        spacer_w(1),
-        render.Box(width=width-1, height=height, child=render.Row(children=[render.Text(text, font=font, color=WHITE)], main_align="center", cross_align="center")),
-    ], main_align="start", cross_align="center"))
+def shifted_team_text(text,width,height,font):
+    return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 
-def shifted_team_text_down(text, width, height, font):
-    return render.Box(width=width, height=height, child=render.Column(children=[
-        spacer_h(1),
-        render.Box(width=width, height=height-1, child=render.Row(children=[
-            spacer_w(1),
-            render.Box(width=width-1, height=height-1, child=render.Row(children=[render.Text(text, font=font, color=WHITE)], main_align="center", cross_align="center")),
-        ], main_align="start", cross_align="center")),
-    ], main_align="start", cross_align="stretch"))
+def shifted_team_text_down(text,width,height,font):
+    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height-1,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))],main_align="start",cross_align="stretch"))
 
-def pregame_team_column(meta, record, width):
-    logo = logo_node(meta, width, 18)
-    return render.Box(color=meta["bg"], width=width, height=32, child=render.Column(children=[
-        shifted_team_text_down(meta["code"], width, 6, "tom-thumb"),
-        render.Box(width=width, height=18, child=render.Row(children=[logo], main_align="center", cross_align="center")),
-        shifted_team_text(record, width, 8, "CG-pixel-3x5-mono"),
-    ], main_align="start", cross_align="stretch"))
+def pregame_team_column(meta,record,width):
+    logo=logo_node(meta,width,18)
+    return render.Box(color=meta["bg"],width=width,height=32,child=render.Column(children=[shifted_team_text_down(meta["code"],width,6,"tom-thumb"),render.Box(width=width,height=18,child=render.Row(children=[logo],main_align="center",cross_align="center")),shifted_team_text(record,width,8,"CG-pixel-3x5-mono")],main_align="start",cross_align="stretch"))
 
 def left_panel(g):
-    live = g["state"] == "live"
-    final = g["state"] == "final"
-    away_color = YELLOW if final and g["away_score"] > g["home_score"] else WHITE
-    home_color = YELLOW if final and g["home_score"] > g["away_score"] else WHITE
-    return render.Box(width=36, child=render.Column(children=[
-        game_team_tile(g["away"], g["away_score"], g["possession"] == g["away"]["code"], live, away_color),
-        game_team_tile(g["home"], g["home_score"], g["possession"] == g["home"]["code"], live, home_color),
-    ]))
+    live=g["state"]=="live"; final=g["state"]=="final"
+    away_color=YELLOW if final and g["away_score"]>g["home_score"] else WHITE
+    home_color=YELLOW if final and g["home_score"]>g["away_score"] else WHITE
+    return render.Box(width=36,child=render.Column(children=[game_team_tile(g["away"],g["away_score"],g["possession"]==g["away"]["code"],live,away_color),game_team_tile(g["home"],g["home_score"],g["possession"]==g["home"]["code"],live,home_color)]))
 
-def centered_panel_text(text, height, font, color):
-    return render.Box(width=28, height=height, child=render.Row(children=[
-        spacer_w(1), render.Box(width=27, height=height, child=render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")),
-    ], main_align="start", cross_align="center"))
+def centered_panel_text(text,height,font,color):
+    return render.Box(width=28,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=27,height=height,child=render.Row(children=[render.Text(text,font=font,color=color)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 
-def field_position_text(text, height, font, color):
-    return render.Box(width=28, height=height, child=render.Row(children=[
-        spacer_w(2), render.Box(width=26, height=height, child=render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center")),
-    ], main_align="start", cross_align="center"))
+def field_position_text(text,height,font,color):
+    return render.Box(width=28,height=height,child=render.Row(children=[spacer_w(2),render.Box(width=26,height=height,child=render.Row(children=[render.Text(text,font=font,color=color)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 
-def compact_preview_row(text, width, height, font, color):
-    return render.Box(width=width, height=height, child=render.Column(children=[
-        render.Row(children=[render.Text(text, font=font, color=color)], main_align="center", cross_align="center"),
-    ], main_align="center", cross_align="stretch"))
+def compact_preview_row(text,width,height,font,color):
+    return render.Box(width=width,height=height,child=render.Column(children=[render.Row(children=[render.Text(text,font=font,color=color)],main_align="center",cross_align="center")],main_align="center",cross_align="stretch"))
 
-def pregame_date_row(month, day, color, width):
-    left_width = (width // 2) + 1
-    right_width = width - left_width
-    return render.Box(width=width, height=8, child=render.Row(children=[
-        render.Box(width=left_width, height=8, child=render.Row(children=[spacer_w(1), render.Text(month, font="tom-thumb", color=color), spacer_w(1)], main_align="end", cross_align="center")),
-        render.Box(width=right_width, height=8, child=render.Row(children=[spacer_w(2), render.Text(day, font="tom-thumb", color=color)], main_align="start", cross_align="center")),
-    ], main_align="start", cross_align="center"))
+def pregame_date_row(month,day,color,width):
+    left_width=(width//2)+1; right_width=width-left_width
+    return render.Box(width=width,height=8,child=render.Row(children=[render.Box(width=left_width,height=8,child=render.Row(children=[spacer_w(1),render.Text(month,font="tom-thumb",color=color),spacer_w(1)],main_align="end",cross_align="center")),render.Box(width=right_width,height=8,child=render.Row(children=[spacer_w(2),render.Text(day,font="tom-thumb",color=color)],main_align="start",cross_align="center"))],main_align="start",cross_align="center"))
 
-def pregame_time_row(hour, minute, color, width):
-    colon = render.Box(width=1, height=8, child=render.Column(children=[
-        spacer_h(1), render.Box(width=1, height=1, color=color), spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(3),
-    ], main_align="start", cross_align="center"))
-    return render.Box(width=width, height=15, child=render.Column(children=[
-        spacer_h(2),
-        render.Box(width=width, height=13, child=render.Row(children=[
-            render.Text(hour, font="5x8", color=color), spacer_w(1), colon, spacer_w(1), render.Text(minute, font="5x8", color=color),
-        ], main_align="center", cross_align="center")),
-    ], main_align="start", cross_align="stretch"))
+def pregame_time_row(hour,minute,color,width):
+    colon=render.Box(width=1,height=8,child=render.Column(children=[spacer_h(1),render.Box(width=1,height=1,color=color),spacer_h(2),render.Box(width=1,height=1,color=color),spacer_h(3)],main_align="start",cross_align="center"))
+    return render.Box(width=width,height=15,child=render.Column(children=[spacer_h(2),render.Box(width=width,height=13,child=render.Row(children=[render.Text(hour,font="5x8",color=color),spacer_w(1),colon,spacer_w(1),render.Text(minute,font="5x8",color=color)],main_align="center",cross_align="center"))],main_align="start",cross_align="stretch"))
 
-def preview_panel(g, config, width=28):
-    date_color = s(config.get("pregame_date_color"), WHITE)
-    time_color = s(config.get("pregame_time_color"), WHITE)
-    return render.Box(width=width, height=32, child=render.Column(children=[
-        spacer_h(1),
-        compact_preview_row(g["weekday_text"], width, 7, "tom-thumb", date_color),
-        pregame_date_row(g["month_text"], g["day_text"], date_color, width),
-        pregame_time_row(g["clock_hour"], g["clock_minute"], time_color, width),
-        spacer_h(1),
-    ], main_align="start", cross_align="stretch"))
+def preview_panel(g,config,width=28):
+    date_color=s(config.get("pregame_date_color"),WHITE); time_color=s(config.get("pregame_time_color"),WHITE)
+    return render.Box(width=width,height=32,child=render.Column(children=[spacer_h(1),compact_preview_row(g["weekday_text"],width,7,"tom-thumb",date_color),pregame_date_row(g["month_text"],g["day_text"],date_color,width),pregame_time_row(g["clock_hour"],g["clock_minute"],time_color,width),spacer_h(1)],main_align="start",cross_align="stretch"))
 
 def bye_center_panel():
-    return render.Box(color=BLACK, width=22, height=32, child=render.Column(children=[
-        spacer_h(6),
-        compact_preview_row("BYE", 22, 9, "5x8", WHITE),
-        spacer_h(2),
-        compact_preview_row("WEEK", 22, 9, "CG-pixel-3x5-mono", WHITE),
-        spacer_h(6),
-    ], main_align="start", cross_align="stretch"))
+    return render.Box(color=BLACK,width=18,height=32,child=render.Column(children=[spacer_h(8),compact_preview_row("BYE",18,9,"5x8",WHITE),spacer_h(1),compact_preview_row("WEEK",18,6,"tom-thumb",WHITE),spacer_h(8)],main_align="start",cross_align="stretch"))
+
+def bye_time_row(hour,minute,width):
+    colon=render.Box(width=1,height=8,child=render.Column(children=[spacer_h(1),render.Box(width=1,height=1,color=WHITE),spacer_h(2),render.Box(width=1,height=1,color=WHITE),spacer_h(3)],main_align="start",cross_align="center"))
+    return render.Box(width=width,height=13,child=render.Row(children=[render.Text(hour,font="5x8",color=WHITE),spacer_w(1),colon,spacer_w(1),render.Text(minute,font="5x8",color=WHITE)],main_align="center",cross_align="center"))
 
 def bye_next_panel(g):
     meta=g["team"]
-    return render.Box(color=meta["bg"], width=21, height=32, child=render.Column(children=[
-        compact_preview_row("NEXT", 21, 5, "tom-thumb", WHITE),
-        compact_preview_row("GAME", 21, 5, "tom-thumb", WHITE),
-        render.Box(width=21, height=7, child=render.Row(children=[
-            render.Text(g["month_text"], font="tom-thumb", color=WHITE),
-            spacer_w(2),
-            render.Text(g["day_text"], font="tom-thumb", color=WHITE),
-        ], main_align="center", cross_align="center")),
-        pregame_time_row(g["clock_hour"], g["clock_minute"], WHITE, 21),
-    ], main_align="start", cross_align="stretch"))
+    return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[compact_preview_row("NEXT",23,5,"tom-thumb",WHITE),compact_preview_row("GAME",23,5,"tom-thumb",WHITE),compact_preview_row(g["weekday_text"],23,4,"tom-thumb",WHITE),render.Box(width=23,height=5,child=render.Row(children=[render.Text(g["month_text"],font="tom-thumb",color=WHITE),spacer_w(2),render.Text(g["day_text"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),bye_time_row(g["clock_hour"],g["clock_minute"],23)],main_align="start",cross_align="stretch"))
 
 def render_bye(g):
-    return render.Box(color=BLACK, width=64, height=32, child=render.Row(children=[
-        # Deliberately use the exact same team column as the normal pregame screen.
-        pregame_team_column(g["team"], g["record"], 21),
-        bye_center_panel(),
-        bye_next_panel(g),
-    ], main_align="start", cross_align="start"))
+    return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["team"],g["record"],23),bye_center_panel(),bye_next_panel(g)],main_align="start",cross_align="start"))
 
-def live_clock_row(clock, color):
-    parts = clock.split(":")
-    if len(parts) != 2: return centered_panel_text(clock, 10, "5x8", color)
-    colon = render.Box(width=1, height=8, child=render.Column(children=[
-        spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(2), render.Box(width=1, height=1, color=color), spacer_h(2),
-    ], main_align="start", cross_align="center"))
-    return render.Box(width=28, height=10, child=render.Row(children=[
-        render.Text(parts[0], font="5x8", color=color), spacer_w(1), colon, spacer_w(1), render.Text(parts[1], font="5x8", color=color),
-    ], main_align="center", cross_align="center"))
+def live_clock_row(clock,color):
+    parts=clock.split(":")
+    if len(parts)!=2: return centered_panel_text(clock,10,"5x8",color)
+    colon=render.Box(width=1,height=8,child=render.Column(children=[spacer_h(2),render.Box(width=1,height=1,color=color),spacer_h(2),render.Box(width=1,height=1,color=color),spacer_h(2)],main_align="start",cross_align="center"))
+    return render.Box(width=28,height=10,child=render.Row(children=[render.Text(parts[0],font="5x8",color=color),spacer_w(1),colon,spacer_w(1),render.Text(parts[1],font="5x8",color=color)],main_align="center",cross_align="center"))
 
-def live_panel(g, config):
+def live_panel(g,config):
     qc=s(config.get("quarter_color"),WHITE); tc=s(config.get("clock_color"),WHITE); fc=s(config.get("field_color"),WHITE)
-    if g["halftime"]:
-        return render.Box(width=28, height=32, child=render.Column(children=[
-            centered_panel_text("HALFTIME", 32, "tom-thumb", qc),
-        ], main_align="center", cross_align="stretch"))
-    return render.Box(width=28, height=32, child=render.Column(children=[
-        spacer_h(4),
-        centered_panel_text(g["quarter"], 6, "tom-thumb", qc),
-        live_clock_row(g["clock"], tc),
-        spacer_h(4),
-        field_position_text(g["field_position"], 8, "CG-pixel-3x5-mono", fc),
-    ], main_align="start", cross_align="stretch"))
+    if g["halftime"]: return render.Box(width=28,height=32,child=render.Column(children=[centered_panel_text("HALFTIME",32,"tom-thumb",qc)],main_align="center",cross_align="stretch"))
+    return render.Box(width=28,height=32,child=render.Column(children=[spacer_h(4),centered_panel_text(g["quarter"],6,"tom-thumb",qc),live_clock_row(g["clock"],tc),spacer_h(4),field_position_text(g["field_position"],8,"CG-pixel-3x5-mono",fc)],main_align="start",cross_align="stretch"))
 
-def final_panel(config):
-    return render.Box(width=28, height=32, child=render.Column(children=[
-        centered_panel_text("FINAL", 32, "5x8", s(config.get("final_color"),WHITE)),
-    ], main_align="center", cross_align="stretch"))
+def final_panel(config): return render.Box(width=28,height=32,child=render.Column(children=[centered_panel_text("FINAL",32,"5x8",s(config.get("final_color"),WHITE))],main_align="center",cross_align="stretch"))
 
-def render_game(g, config):
-    if g["state"] == "bye": return render_bye(g)
-    if g["state"] == "pre":
-        return render.Box(color=BLACK, width=64, height=32, child=render.Row(children=[
-            pregame_team_column(g["away"], g["away_record"], 21),
-            preview_panel(g, config, 22),
-            pregame_team_column(g["home"], g["home_record"], 21),
-        ], main_align="start", cross_align="start"))
-    right = live_panel(g, config) if g["state"] == "live" else final_panel(config)
-    return render.Box(color=BLACK, child=render.Row(children=[left_panel(g), right], main_align="start", cross_align="start"))
+def render_game(g,config):
+    if g["state"]=="bye": return render_bye(g)
+    if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21)],main_align="start",cross_align="start"))
+    right=live_panel(g,config) if g["state"]=="live" else final_panel(config)
+    return render.Box(color=BLACK,child=render.Row(children=[left_panel(g),right],main_align="start",cross_align="start"))
 
-def parse_competition(event, timezone):
-    comps = event.get("competitions") if type(event) == "dict" else None
-    if type(comps) != "list" or len(comps) == 0: return None
-    comp = comps[0]; competitors = comp.get("competitors")
-    if type(competitors) != "list": return None
+def parse_competition(event,timezone):
+    comps=event.get("competitions") if type(event)=="dict" else None
+    if type(comps)!="list" or len(comps)==0: return None
+    comp=comps[0]; competitors=comp.get("competitors")
+    if type(competitors)!="list": return None
     away=None; home=None; away_score=0; home_score=0; away_record=""; home_record=""; away_id=""; home_id=""
     for c in competitors:
-        if type(c) != "dict": continue
-        team=c.get("team")
-        m = team_meta(team)
-        cid=s(c.get("id"), "")
-        if cid=="" and type(team)=="dict": cid=s(team.get("id"), "")
-        if s(c.get("homeAway")) == "away": away=m; away_score=score_int(c.get("score")); away_record=record_text(c); away_id=cid
-        if s(c.get("homeAway")) == "home": home=m; home_score=score_int(c.get("score")); home_record=record_text(c); home_id=cid
-    if away == None or home == None: return None
-    status=event.get("status"); stype=status.get("type") if type(status)=="dict" else {}
-    state_raw=s(stype.get("state")) if type(stype)=="dict" else "pre"
-    state="live" if state_raw=="in" else ("final" if state_raw=="post" else "pre")
+        if type(c)!="dict": continue
+        team=c.get("team"); m=team_meta(team); cid=s(c.get("id"),"")
+        if cid=="" and type(team)=="dict": cid=s(team.get("id"),"")
+        if s(c.get("homeAway"))=="away": away=m; away_score=score_int(c.get("score")); away_record=record_text(c); away_id=cid
+        if s(c.get("homeAway"))=="home": home=m; home_score=score_int(c.get("score")); home_record=record_text(c); home_id=cid
+    if away==None or home==None: return None
+    status=event.get("status"); stype=status.get("type") if type(status)=="dict" else {}; state_raw=s(stype.get("state")) if type(stype)=="dict" else "pre"; state="live" if state_raw=="in" else ("final" if state_raw=="post" else "pre")
     display_clock=s(status.get("displayClock"),"") if type(status)=="dict" else ""; period=i(status.get("period"),0) if type(status)=="dict" else 0
     quarter=""
     if period==1: quarter="1st"
@@ -281,7 +190,8 @@ def parse_competition(event, timezone):
     elif period==3: quarter="3rd"
     elif period==4: quarter="4th"
     elif period>4: quarter="OT"
-    halftime = state == "live" and period == 2 and (display_clock == "0:00" or display_clock == "0:00.0")
+    halftime=state=="live" and period==2 and (display_clock=="0:00" or display_clock=="0:00.0")
+    season=event.get("season") if type(event)=="dict" else None; season_type=i(season.get("type"),0) if type(season)=="dict" else 0
     situation=comp.get("situation"); possession=""; down_distance=""; field_position=""
     if type(situation)=="dict":
         possession_raw=s(situation.get("possession"),"")
@@ -293,35 +203,24 @@ def parse_competition(event, timezone):
     if date_raw!="":
         parse_date=date_raw
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
-        t=time.parse_time(parse_date).in_location(timezone)
-        event_time=t
-        weekday_text=t.format("Mon").upper()
-        month_text=t.format("Jan").upper()
-        day_text=t.format("2")
-        date_text=month_text+" "+day_text
-        clock_text=t.format("3:04")
-        clock_hour=t.format("3")
-        clock_minute=t.format("04")
-    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"halftime":halftime,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute,"event_time":event_time}
+        t=time.parse_time(parse_date).in_location(timezone); event_time=t; weekday_text=t.format("Mon").upper(); month_text=t.format("Jan").upper(); day_text=t.format("2"); date_text=month_text+" "+day_text; clock_text=t.format("3:04"); clock_hour=t.format("3"); clock_minute=t.format("04")
+    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"halftime":halftime,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute,"event_time":event_time,"season_type":season_type}
 
 def get_games(config):
     data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30)
     if type(data)!="dict": return []
     events=data.get("events")
     if type(events)!="list": return []
-    tz=s(config.get("timezone"),"America/New_York")
-    games=[]
+    tz=s(config.get("timezone"),"America/New_York"); games=[]
     for event in events:
         g=parse_competition(event,tz)
         if g!=None: games.append(g)
     return games
 
-def get_team_games(config, team):
-    now=time.now().in_location("America/New_York")
-    season=now.year
+def get_team_games(config,team):
+    now=time.now().in_location("America/New_York"); season=now.year
     if now.month<=2: season=season-1
-    tz=s(config.get("timezone"),"America/New_York")
-    games=[]; seen={}
+    tz=s(config.get("timezone"),"America/New_York"); games=[]; seen={}
     for season_type in [1,2,3]:
         data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/"+team+"/schedule?season="+str(season)+"&seasontype="+str(season_type),120)
         if type(data)!="dict": continue
@@ -338,44 +237,50 @@ def get_team_games(config, team):
     return games
 
 def weekly_rollover_start():
-    now=time.now().in_location("America/New_York")
-    weekday=now.format("Mon")
-    days_back={"Tue":0,"Wed":1,"Thu":2,"Fri":3,"Sat":4,"Sun":5,"Mon":6}.get(weekday,0)
+    now=time.now().in_location("America/New_York"); weekday=now.format("Mon"); days_back={"Tue":0,"Wed":1,"Thu":2,"Fri":3,"Sat":4,"Sun":5,"Mon":6}.get(weekday,0)
     if weekday=="Tue" and now.hour<5: days_back=7
-    hours_back=days_back*24+(now.hour-5)
-    duration=str(hours_back)+"h"+str(now.minute)+"m"+str(now.second)+"s"
+    hours_back=days_back*24+(now.hour-5); duration=str(hours_back)+"h"+str(now.minute)+"m"+str(now.second)+"s"
     return now-time.parse_duration(duration)
 
-def team_meta_record_from_game(g, team):
+def team_meta_record_from_game(g,team):
     if type(g)!="dict": return None
     if g["away"]["code"]==team: return {"meta":g["away"],"record":g["away_record"]}
     if g["home"]["code"]==team: return {"meta":g["home"],"record":g["home_record"]}
     return None
 
-def make_bye_state(team, upcoming, latest_final):
+def calculated_record(games,team,season_type):
+    wins=0; losses=0; ties=0
+    for g in games:
+        if g["state"]!="final" or g.get("season_type")!=season_type: continue
+        if g["away"]["code"]==team: us=g["away_score"]; them=g["home_score"]
+        elif g["home"]["code"]==team: us=g["home_score"]; them=g["away_score"]
+        else: continue
+        if us>them: wins+=1
+        elif us<them: losses+=1
+        else: ties+=1
+    if wins==0 and losses==0 and ties==0: return ""
+    if ties>0: return str(wins)+"-"+str(losses)+"-"+str(ties)
+    return str(wins)+"-"+str(losses)
+
+def make_bye_state(team,upcoming,latest_final,fallback_record=""):
     source=team_meta_record_from_game(upcoming,team)
     if source==None: source=team_meta_record_from_game(latest_final,team)
     if source==None: return None
-    record=source["record"]
-    previous=team_meta_record_from_game(latest_final,team)
+    record=source["record"]; previous=team_meta_record_from_game(latest_final,team)
     if record=="" and previous!=None: record=previous["record"]
+    if record=="": record=fallback_record
     return {"state":"bye","team":source["meta"],"record":record,"weekday_text":upcoming["weekday_text"],"month_text":upcoming["month_text"],"day_text":upcoming["day_text"],"clock_hour":upcoming["clock_hour"],"clock_minute":upcoming["clock_minute"]}
 
 def selected_games(config):
     mode=s(config.get("mode"),"team")
     if mode=="all": return get_games(config)
-    team=s(config.get("team"),"PHI")
-    games=get_team_games(config,team)
+    team=s(config.get("team"),"PHI"); games=get_team_games(config,team)
     if len(games)==0:
-        games=get_games(config)
-        fallback=[]
+        games=get_games(config); fallback=[]
         for g in games:
             if g["away"]["code"]==team or g["home"]["code"]==team: fallback.append(g)
         return fallback
-    now=time.now().in_location("America/New_York")
-    rollover=weekly_rollover_start()
-    next_rollover=rollover+time.parse_duration("168h")
-    live=[]; recent_final=None; upcoming=None; latest_final=None
+    now=time.now().in_location("America/New_York"); rollover=weekly_rollover_start(); next_rollover=rollover+time.parse_duration("168h"); live=[]; recent_final=None; upcoming=None; latest_final=None
     for g in games:
         et=g.get("event_time")
         if g["state"]=="live": live.append(g); continue
@@ -384,21 +289,22 @@ def selected_games(config):
             if et!=None and et>=rollover and et<=now and (recent_final==None or recent_final.get("event_time")==None or et>recent_final["event_time"]): recent_final=g
         elif g["state"]=="pre" and et!=None and et>=now:
             if upcoming==None or upcoming.get("event_time")==None or et<upcoming["event_time"]: upcoming=g
+    fallback_record=""
+    if upcoming!=None: fallback_record=calculated_record(games,team,upcoming.get("season_type"))
     if FORCE_BYE_PREVIEW and upcoming!=None:
-        bye=make_bye_state(team,upcoming,latest_final)
+        bye=make_bye_state(team,upcoming,latest_final,fallback_record)
         if bye!=None: return [bye]
     if len(live)>0: return live
     if recent_final!=None: return [recent_final]
     if upcoming!=None:
         if upcoming["event_time"]>=next_rollover:
-            bye=make_bye_state(team,upcoming,latest_final)
+            bye=make_bye_state(team,upcoming,latest_final,fallback_record)
             if bye!=None: return [bye]
         return [upcoming]
     if latest_final!=None: return [latest_final]
     return []
 
-def no_game():
-    return render.Root(child=render.Box(color=BLACK,width=64,height=32,child=render.Column(children=[spacer_h(10),render.Box(width=64,child=render.Row(children=[render.Text("NO NFL GAME",font="5x8",color=WHITE)],main_align="center"))],cross_align="stretch")))
+def no_game(): return render.Root(child=render.Box(color=BLACK,width=64,height=32,child=render.Column(children=[spacer_h(10),render.Box(width=64,child=render.Row(children=[render.Text("NO NFL GAME",font="5x8",color=WHITE)],main_align="center"))],cross_align="stretch")))
 
 def main(config):
     games=selected_games(config)
@@ -409,13 +315,6 @@ def main(config):
     return render.Root(delay=8000,child=render.Animation(children=frames))
 
 def get_schema():
-    return schema.Schema(version="1",fields=[
-        schema.Dropdown(id="mode",name="Game Mode",desc="Track one team or cycle all NFL games.",icon="gear",default="team",options=[schema.Option(display="Specific Team",value="team"),schema.Option(display="All Games",value="all")]),
-        schema.Dropdown(id="team",name="Team Focus",desc="Team used in Specific Team mode.",icon="gear",default="PHI",options=teamOptions),
-        schema.Color(id="pregame_date_color",name="Pregame Date Color",desc="Pregame weekday/date color.",icon="brush",default=WHITE), schema.Color(id="pregame_time_color",name="Pregame Time Color",desc="Pregame kickoff-time color.",icon="brush",default=WHITE),
-        schema.Color(id="quarter_color",name="Quarter Color",desc="Live-game quarter color.",icon="brush",default=WHITE),
-        schema.Color(id="clock_color",name="Clock Color",desc="Live-game clock color.",icon="brush",default=WHITE),
-        schema.Color(id="field_color",name="Field Position Color",desc="Live-game field position color.",icon="brush",default=WHITE), schema.Color(id="final_color",name="Final Color",desc="Final-state text color.",icon="brush",default=WHITE),
-    ])
+    return schema.Schema(version="1",fields=[schema.Dropdown(id="mode",name="Game Mode",desc="Track one team or cycle all NFL games.",icon="gear",default="team",options=[schema.Option(display="Specific Team",value="team"),schema.Option(display="All Games",value="all")]),schema.Dropdown(id="team",name="Team Focus",desc="Team used in Specific Team mode.",icon="gear",default="PHI",options=teamOptions),schema.Color(id="pregame_date_color",name="Pregame Date Color",desc="Pregame weekday/date color.",icon="brush",default=WHITE),schema.Color(id="pregame_time_color",name="Pregame Time Color",desc="Pregame kickoff-time color.",icon="brush",default=WHITE),schema.Color(id="quarter_color",name="Quarter Color",desc="Live-game quarter color.",icon="brush",default=WHITE),schema.Color(id="clock_color",name="Clock Color",desc="Live-game clock color.",icon="brush",default=WHITE),schema.Color(id="field_color",name="Field Position Color",desc="Live-game field position color.",icon="brush",default=WHITE),schema.Color(id="final_color",name="Final Color",desc="Final-state text color.",icon="brush",default=WHITE)])
 
 teamOptions=[schema.Option(display=TEAM_NAMES[k],value=k) for k in TEAM_NAMES]
