@@ -47,7 +47,7 @@ def default_game():
         "away_logo_url": "", "home_logo_url": "",
         "is_final": False, "is_preview": False, "start_text": "",
         "weekday_text": "TBD", "month_text": "", "day_text": "",
-        "game_label": "", "has_game": False, "fetch_ok": False,
+        "game_label": "", "has_game": False, "has_game_today": False, "fetch_ok": False,
     }
 
 TEAM_BY_ID = {108:"LAA",109:"ARI",110:"BAL",111:"BOS",112:"CHC",113:"CIN",114:"CLE",115:"COL",116:"DET",117:"HOU",118:"KC",119:"LAD",120:"WSH",121:"NYM",133:"ATH",134:"PIT",135:"SD",136:"SEA",137:"SF",138:"STL",139:"TB",140:"TEX",141:"TOR",142:"MIN",143:"PHI",144:"ATL",145:"CWS",146:"MIA",147:"NYY",158:"MIL"}
@@ -383,7 +383,10 @@ def right_panel(data):
 def get_game_data(config):
     data=default_game(); espn=get_espn_team_map(); mlb_ids=get_mlb_team_ids(); include_exhibition=config.bool("include_exhibition_opponents",False); team_code=as_str(config.get("team"),""); team_id=TEAM_ID_BY_CODE.get(team_code)
     if team_id==None: team_id=111
-    response=http.get(url="https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId="+str(team_id)+"&hydrate=linescore",ttl_seconds=120)
+    now=time.now().in_location("America/New_York")
+    start_date=now.format("2006-01-02")
+    end_date=(now+time.parse_duration("336h")).format("2006-01-02")
+    response=http.get(url="https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId="+str(team_id)+"&startDate="+start_date+"&endDate="+end_date+"&hydrate=linescore",ttl_seconds=120)
     if response.status_code!=200: return data
     body=response.body()
     if body==None or len(body)==0 or body[0]!="{": return data
@@ -391,10 +394,14 @@ def get_game_data(config):
     if type(parsed)!="dict": return data
     data["fetch_ok"]=True; dates=parsed.get("dates")
     if type(dates)!="list" or len(dates)==0: return data
-    day=dates[0]
-    if type(day)!="dict": return data
-    info=select_game_info(day.get("games"),include_exhibition,mlb_ids,team_code)
-    if type(info)!="dict": return data
+    day=None; info=None
+    for candidate_day in dates:
+        if type(candidate_day)!="dict": continue
+        candidate_info=select_game_info(candidate_day.get("games"),include_exhibition,mlb_ids,team_code)
+        if type(candidate_info)=="dict":
+            day=candidate_day; info=candidate_info; break
+    if type(day)!="dict" or type(info)!="dict": return data
+    data["has_game_today"]=as_str(day.get("date"),"")==start_date
     game=info.get("game")
     if type(game)!="dict": return data
     data["has_game"]=True; data["game_label"]=as_str(info.get("game_label"),""); status=game.get("status")
@@ -417,7 +424,7 @@ def get_game_data(config):
 
 def main(config):
     data=get_game_data(config)
-    if config.bool("gameday_only",False) and data["fetch_ok"] and not data["has_game"]: return []
+    if config.bool("gameday_only",False) and data["fetch_ok"] and not data["has_game_today"]: return []
     return render.Root(child=render.Box(color="#000000",child=render.Row(children=[left_panel(data),right_panel(data)],main_align="start",cross_align="start")))
 
 def get_schema():
