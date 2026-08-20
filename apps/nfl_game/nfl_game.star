@@ -10,6 +10,7 @@ load("time.star", "time")
 
 WHITE = "#ffffff"
 BLACK = "#000000"
+YELLOW = "#ffff00"
 
 TEAM_BG = {
     "ARI":"#97233F", "ATL":"#A71930", "BAL":"#241773", "BUF":"#00338D", "CAR":"#0085CA", "CHI":"#0B162A", "CIN":"#FB4F14", "CLE":"#311D00",
@@ -78,7 +79,7 @@ def logo_node(meta, width, height=None):
     if img != None: return render.Image(img, width=width, height=height)
     return render.Text(meta["code"][0], font="6x13", color=WHITE)
 
-def game_team_tile(meta, score, possession, live):
+def game_team_tile(meta, score, possession, live, score_color=WHITE):
     logo_width = 17 if live else 20
     info_width = 15
     logo = logo_node(meta, logo_width, 16)
@@ -86,11 +87,11 @@ def game_team_tile(meta, score, possession, live):
         possession_box = render.Box(width=2, height=9, child=render.Column(children=[render.Box(width=2, height=2, color=WHITE) if possession else spacer_w(2)], main_align="center", cross_align="center"))
         score_row = render.Box(width=info_width, height=9, child=render.Row(children=[
             spacer_w(2),
-            render.Box(width=11, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="center", cross_align="center")),
+            render.Box(width=11, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=score_color)], main_align="center", cross_align="center")),
             possession_box,
         ], main_align="start", cross_align="center"))
     else:
-        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=WHITE)], main_align="center", cross_align="center"))
+        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[render.Text(str(score), font="5x8", color=score_color)], main_align="center", cross_align="center"))
     info = render.Box(width=info_width, height=16, child=render.Column(children=[
         render.Box(width=info_width, height=7, child=render.Row(children=[render.Text(meta["code"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
         score_row,
@@ -128,9 +129,12 @@ def pregame_team_column(meta, record, width):
 
 def left_panel(g):
     live = g["state"] == "live"
+    final = g["state"] == "final"
+    away_color = YELLOW if final and g["away_score"] > g["home_score"] else WHITE
+    home_color = YELLOW if final and g["home_score"] > g["away_score"] else WHITE
     return render.Box(width=36, child=render.Column(children=[
-        game_team_tile(g["away"], g["away_score"], g["possession"] == g["away"]["code"], live),
-        game_team_tile(g["home"], g["home_score"], g["possession"] == g["home"]["code"], live),
+        game_team_tile(g["away"], g["away_score"], g["possession"] == g["away"]["code"], live, away_color),
+        game_team_tile(g["home"], g["home_score"], g["possession"] == g["home"]["code"], live, home_color),
     ]))
 
 def centered_panel_text(text, height, font, color):
