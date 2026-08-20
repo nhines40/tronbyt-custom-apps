@@ -254,11 +254,12 @@ def parse_competition(event, timezone):
         elif possession_raw==home_id: possession=home["code"]
         elif possession_raw==away["code"] or possession_raw==home["code"]: possession=possession_raw
         down_distance=s(situation.get("shortDownDistanceText"),s(situation.get("downDistanceText"),"")); field_position=s(situation.get("possessionText"),"")
-    date_raw=s(event.get("date"),""); weekday_text="TBD"; date_text="TBD"; month_text=""; day_text=""; clock_text="TBD"; clock_hour=""; clock_minute=""
+    date_raw=s(event.get("date"),""); weekday_text="TBD"; date_text="TBD"; month_text=""; day_text=""; clock_text="TBD"; clock_hour=""; clock_minute=""; event_time=None
     if date_raw!="":
         parse_date=date_raw
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
         t=time.parse_time(parse_date).in_location(timezone)
+        event_time=t
         weekday_text=t.format("Mon").upper()
         month_text=t.format("Jan").upper()
         day_text=t.format("2")
@@ -266,7 +267,7 @@ def parse_competition(event, timezone):
         clock_text=t.format("3:04")
         clock_hour=t.format("3")
         clock_minute=t.format("04")
-    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"halftime":halftime,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute}
+    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"halftime":halftime,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute,"event_time":event_time}
 
 def get_games(config):
     data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30)
@@ -280,13 +281,63 @@ def get_games(config):
         if g!=None: games.append(g)
     return games
 
+def get_team_games(config, team):
+    now=time.now().in_location("America/New_York")
+    season=now.year
+    if now.month<=2: season=season-1
+    tz=s(config.get("timezone"),"America/New_York")
+    games=[]; seen={}
+    for season_type in [1,2,3]:
+        data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/"+team+"/schedule?season="+str(season)+"&seasontype="+str(season_type),120)
+        if type(data)!="dict": continue
+        events=data.get("events")
+        if type(events)!="list": continue
+        for event in events:
+            if type(event)!="dict": continue
+            event_id=s(event.get("id"),"")
+            if event_id!="" and seen.get(event_id)!=None: continue
+            g=parse_competition(event,tz)
+            if g==None: continue
+            if event_id!="": seen[event_id]=True
+            games.append(g)
+    return games
+
+def weekly_rollover_start():
+    now=time.now().in_location("America/New_York")
+    weekday=now.format("Mon")
+    days_back={"Tue":0,"Wed":1,"Thu":2,"Fri":3,"Sat":4,"Sun":5,"Mon":6}.get(weekday,0)
+    if weekday=="Tue" and now.hour<5: days_back=7
+    hours_back=days_back*24+(now.hour-5)
+    duration=str(hours_back)+"h"+str(now.minute)+"m"+str(now.second)+"s"
+    return now-time.parse_duration(duration)
+
 def selected_games(config):
-    games=get_games(config); mode=s(config.get("mode"),"team")
-    if mode=="all": return games
-    team=s(config.get("team"),"PHI"); out=[]
+    mode=s(config.get("mode"),"team")
+    if mode=="all": return get_games(config)
+    team=s(config.get("team"),"PHI")
+    games=get_team_games(config,team)
+    if len(games)==0:
+        games=get_games(config)
+        fallback=[]
+        for g in games:
+            if g["away"]["code"]==team or g["home"]["code"]==team: fallback.append(g)
+        return fallback
+    now=time.now().in_location("America/New_York")
+    rollover=weekly_rollover_start()
+    live=[]; recent_final=None; upcoming=None; latest_final=None
     for g in games:
-        if g["away"]["code"]==team or g["home"]["code"]==team: out.append(g)
-    return out
+        et=g.get("event_time")
+        if g["state"]=="live": live.append(g); continue
+        if g["state"]=="final":
+            if et!=None and (latest_final==None or latest_final.get("event_time")==None or et>latest_final["event_time"]): latest_final=g
+            if et!=None and et>=rollover and et<=now and (recent_final==None or recent_final.get("event_time")==None or et>recent_final["event_time"]): recent_final=g
+        elif g["state"]=="pre" and et!=None and et>=now:
+            if upcoming==None or upcoming.get("event_time")==None or et<upcoming["event_time"]: upcoming=g
+    if len(live)>0: return live
+    if recent_final!=None: return [recent_final]
+    if upcoming!=None: return [upcoming]
+    if latest_final!=None: return [latest_final]
+    return []
 
 def no_game():
     return render.Root(child=render.Box(color=BLACK,width=64,height=32,child=render.Column(children=[spacer_h(10),render.Box(width=64,child=render.Row(children=[render.Text("NO NFL GAME",font="5x8",color=WHITE)],main_align="center"))],cross_align="stretch")))
