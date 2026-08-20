@@ -141,11 +141,21 @@ def bye_center_panel():
 
 def bye_time_row(hour,minute,width):
     colon=render.Box(width=1,height=8,child=render.Column(children=[spacer_h(1),render.Box(width=1,height=1,color=WHITE),spacer_h(2),render.Box(width=1,height=1,color=WHITE),spacer_h(3)],main_align="start",cross_align="center"))
-    return render.Box(width=width,height=13,child=render.Row(children=[render.Text(hour,font="5x8",color=WHITE),spacer_w(1),colon,spacer_w(1),render.Text(minute,font="5x8",color=WHITE)],main_align="center",cross_align="center"))
+    return render.Box(width=width,height=9,child=render.Row(children=[render.Text(hour,font="5x8",color=WHITE),spacer_w(1),colon,spacer_w(1),render.Text(minute,font="5x8",color=WHITE)],main_align="center",cross_align="center"))
 
 def bye_next_panel(g):
     meta=g["team"]
-    return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[compact_preview_row("NEXT",23,5,"tom-thumb",WHITE),compact_preview_row("GAME",23,5,"tom-thumb",WHITE),compact_preview_row(g["weekday_text"],23,4,"tom-thumb",WHITE),render.Box(width=23,height=5,child=render.Row(children=[render.Text(g["month_text"],font="tom-thumb",color=WHITE),spacer_w(2),render.Text(g["day_text"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),bye_time_row(g["clock_hour"],g["clock_minute"],23)],main_align="start",cross_align="stretch"))
+    return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[
+        compact_preview_row("NEXT",23,5,"tom-thumb",WHITE),
+        spacer_h(1),
+        compact_preview_row("GAME",23,5,"tom-thumb",WHITE),
+        spacer_h(1),
+        compact_preview_row(g["weekday_text"],23,4,"tom-thumb",WHITE),
+        spacer_h(1),
+        render.Box(width=23,height=5,child=render.Row(children=[render.Text(g["month_text"],font="tom-thumb",color=WHITE),spacer_w(2),render.Text(g["day_text"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),
+        spacer_h(1),
+        bye_time_row(g["clock_hour"],g["clock_minute"],23),
+    ],main_align="start",cross_align="stretch"))
 
 def render_bye(g):
     return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["team"],g["record"],23),bye_center_panel(),bye_next_panel(g)],main_align="start",cross_align="start"))
@@ -258,7 +268,6 @@ def calculated_record(games,team,season_type):
         if us>them: wins+=1
         elif us<them: losses+=1
         else: ties+=1
-    if wins==0 and losses==0 and ties==0: return ""
     if ties>0: return str(wins)+"-"+str(losses)+"-"+str(ties)
     return str(wins)+"-"+str(losses)
 
