@@ -196,17 +196,12 @@ def bye_center_panel():
 
 def bye_next_panel(g):
     meta=g["team"]
-    colon = render.Box(width=1, height=8, child=render.Column(children=[
-        spacer_h(1), render.Box(width=1, height=1, color=WHITE), spacer_h(2), render.Box(width=1, height=1, color=WHITE), spacer_h(3),
-    ], main_align="start", cross_align="center"))
     return render.Box(color=meta["bg"], width=21, height=32, child=render.Column(children=[
-        spacer_h(1),
         compact_preview_row("NEXT", 21, 5, "tom-thumb", WHITE),
-        compact_preview_row(g["weekday_text"], 21, 5, "tom-thumb", WHITE),
-        render.Box(width=21, height=7, child=render.Row(children=[render.Text(g["month_text"], font="tom-thumb", color=WHITE), spacer_w(2), render.Text(g["day_text"], font="tom-thumb", color=WHITE)], main_align="center", cross_align="center")),
-        render.Box(width=21, height=13, child=render.Row(children=[
-            render.Text(g["clock_hour"], font="5x8", color=WHITE), spacer_w(1), colon, spacer_w(1), render.Text(g["clock_minute"], font="5x8", color=WHITE),
-        ], main_align="center", cross_align="center")),
+        compact_preview_row("GAME", 21, 5, "tom-thumb", WHITE),
+        compact_preview_row(g["weekday_text"], 21, 6, "tom-thumb", WHITE),
+        pregame_date_row(g["month_text"], g["day_text"], WHITE, 21),
+        pregame_time_row(g["clock_hour"], g["clock_minute"], WHITE, 21),
         spacer_h(1),
     ], main_align="start", cross_align="stretch"))
 
