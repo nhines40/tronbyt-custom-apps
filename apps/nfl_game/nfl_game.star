@@ -274,7 +274,11 @@ def make_bye_state(team,upcoming,latest_final,fallback_record=""):
 
 def selected_games(config):
     mode=s(config.get("mode"),"team")
-    if mode=="all": return get_games(config)
+    if mode=="all":
+        games=get_games(config); out=[]
+        for g in games:
+            if g.get("state")!="bye": out.append(g)
+        return out
     team=s(config.get("team"),"PHI"); games=get_team_games(config,team)
     if len(games)==0:
         games=get_games(config); fallback=[]
