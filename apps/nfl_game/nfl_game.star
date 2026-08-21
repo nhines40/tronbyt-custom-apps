@@ -140,14 +140,7 @@ def bye_center_panel():
 
 def bye_next_panel(g):
     meta=g["team"]
-    return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[
-        spacer_h(2),
-        render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("NEXT",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
-        render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("GAME",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
-        spacer_h(3),
-        render.Box(width=23,height=5,child=render.Row(children=[render.Box(width=12,height=5,child=render.Row(children=[spacer_w(1),render.Text(g["month_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center")),render.Box(width=11,height=5,child=render.Row(children=[spacer_w(3),render.Text(g["day_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center"))],main_align="center",cross_align="center")),
-        spacer_h(6),
-    ],main_align="start",cross_align="stretch"))
+    return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[spacer_h(2),render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("NEXT",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("GAME",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),spacer_h(3),render.Box(width=23,height=5,child=render.Row(children=[render.Box(width=12,height=5,child=render.Row(children=[spacer_w(1),render.Text(g["month_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center")),render.Box(width=11,height=5,child=render.Row(children=[spacer_w(3),render.Text(g["day_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center"))],main_align="center",cross_align="center")),spacer_h(6)],main_align="start",cross_align="stretch"))
 
 def render_bye(g):
     return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["team"],g["record"],23),bye_center_panel(),bye_next_panel(g)],main_align="start",cross_align="start"))
@@ -263,6 +256,13 @@ def calculated_record(games,team,season_type):
     if ties>0: return str(wins)+"-"+str(losses)+"-"+str(ties)
     return str(wins)+"-"+str(losses)
 
+def fill_pregame_records(config,g):
+    if g==None or g["state"]!="pre": return g
+    season_type=g.get("season_type")
+    if g["away_record"]=="": g["away_record"]=calculated_record(get_team_games(config,g["away"]["code"]),g["away"]["code"],season_type)
+    if g["home_record"]=="": g["home_record"]=calculated_record(get_team_games(config,g["home"]["code"]),g["home"]["code"],season_type)
+    return g
+
 def make_bye_state(team,upcoming,latest_final,fallback_record=""):
     source=team_meta_record_from_game(upcoming,team)
     if source==None: source=team_meta_record_from_game(latest_final,team)
@@ -290,6 +290,7 @@ def selected_games(config):
             if et!=None and et>=rollover and et<=now and (recent_final==None or recent_final.get("event_time")==None or et>recent_final["event_time"]): recent_final=g
         elif g["state"]=="pre" and et!=None and et>=now:
             if upcoming==None or upcoming.get("event_time")==None or et<upcoming["event_time"]: upcoming=g
+    if upcoming!=None: upcoming=fill_pregame_records(config,upcoming)
     fallback_record=""
     if upcoming!=None: fallback_record=calculated_record(games,team,upcoming.get("season_type"))
     if FORCE_BYE_PREVIEW and upcoming!=None:
