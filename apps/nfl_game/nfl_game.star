@@ -139,22 +139,16 @@ def preview_panel(g,config,width=28):
 def bye_center_panel():
     return render.Box(color=BLACK,width=18,height=32,child=render.Column(children=[spacer_h(8),compact_preview_row("BYE",18,9,"5x8",WHITE),spacer_h(1),compact_preview_row("WEEK",18,6,"tom-thumb",WHITE),spacer_h(8)],main_align="start",cross_align="stretch"))
 
-def bye_time_row(hour,minute,width):
-    colon=render.Box(width=1,height=8,child=render.Column(children=[spacer_h(1),render.Box(width=1,height=1,color=WHITE),spacer_h(2),render.Box(width=1,height=1,color=WHITE),spacer_h(3)],main_align="start",cross_align="center"))
-    return render.Box(width=width,height=9,child=render.Row(children=[render.Text(hour,font="5x8",color=WHITE),spacer_w(1),colon,spacer_w(1),render.Text(minute,font="5x8",color=WHITE)],main_align="center",cross_align="center"))
-
 def bye_next_panel(g):
     meta=g["team"]
+    date_text=g["month_text"]+" "+g["day_text"]
     return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[
-        compact_preview_row("NEXT",23,5,"tom-thumb",WHITE),
-        spacer_h(1),
-        compact_preview_row("GAME",23,5,"tom-thumb",WHITE),
-        spacer_h(1),
-        compact_preview_row(g["weekday_text"],23,4,"tom-thumb",WHITE),
-        spacer_h(1),
-        render.Box(width=23,height=5,child=render.Row(children=[render.Text(g["month_text"],font="tom-thumb",color=WHITE),spacer_w(2),render.Text(g["day_text"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),
-        spacer_h(1),
-        bye_time_row(g["clock_hour"],g["clock_minute"],23),
+        spacer_h(2),
+        compact_preview_row("NEXT",23,8,"5x8",WHITE),
+        compact_preview_row("GAME",23,8,"5x8",WHITE),
+        spacer_h(3),
+        render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text(date_text,font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
+        spacer_h(3),
     ],main_align="start",cross_align="stretch"))
 
 def render_bye(g):
@@ -278,7 +272,7 @@ def make_bye_state(team,upcoming,latest_final,fallback_record=""):
     record=source["record"]; previous=team_meta_record_from_game(latest_final,team)
     if record=="" and previous!=None: record=previous["record"]
     if record=="": record=fallback_record
-    return {"state":"bye","team":source["meta"],"record":record,"weekday_text":upcoming["weekday_text"],"month_text":upcoming["month_text"],"day_text":upcoming["day_text"],"clock_hour":upcoming["clock_hour"],"clock_minute":upcoming["clock_minute"]}
+    return {"state":"bye","team":source["meta"],"record":record,"weekday_text":upcoming["weekday_text"],"month_text":upcoming["month_text"],"day_text":upcoming["day_text"],"clock_text":upcoming["clock_text"],"clock_hour":upcoming["clock_hour"],"clock_minute":upcoming["clock_minute"]}
 
 def selected_games(config):
     mode=s(config.get("mode"),"team")
