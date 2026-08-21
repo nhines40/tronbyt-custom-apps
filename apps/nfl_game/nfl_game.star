@@ -146,7 +146,7 @@ def bye_next_panel(g):
         render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("NEXT",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
         render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("GAME",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
         spacer_h(3),
-        render.Box(width=23,height=5,child=render.Row(children=[render.Box(width=12,height=5,child=render.Row(children=[spacer_w(1),render.Text(g["month_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center")),render.Box(width=11,height=5,child=render.Row(children=[spacer_w(2),render.Text(g["day_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center"))],main_align="center",cross_align="center")),
+        render.Box(width=23,height=5,child=render.Row(children=[render.Box(width=12,height=5,child=render.Row(children=[spacer_w(1),render.Text(g["month_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center")),render.Box(width=11,height=5,child=render.Row(children=[spacer_w(3),render.Text(g["day_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center"))],main_align="center",cross_align="center")),
         spacer_h(6),
     ],main_align="start",cross_align="stretch"))
 
