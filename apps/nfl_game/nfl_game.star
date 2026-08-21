@@ -144,11 +144,11 @@ def bye_next_panel(g):
     date_text=g["month_text"]+" "+g["day_text"]
     return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[
         spacer_h(2),
-        compact_preview_row("NEXT",23,8,"5x8",WHITE),
-        compact_preview_row("GAME",23,8,"5x8",WHITE),
+        render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("NEXT",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
+        render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text("GAME",font="5x8",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
         spacer_h(3),
-        render.Box(width=23,height=8,child=render.Row(children=[spacer_w(1),render.Box(width=22,height=8,child=render.Row(children=[render.Text(date_text,font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center")),
-        spacer_h(3),
+        render.Box(width=23,height=5,child=render.Row(children=[render.Text(date_text,font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center")),
+        spacer_h(6),
     ],main_align="start",cross_align="stretch"))
 
 def render_bye(g):
