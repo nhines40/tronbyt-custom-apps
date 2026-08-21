@@ -12,9 +12,8 @@ WHITE = "#ffffff"
 BLACK = "#000000"
 YELLOW = "#ffff00"
 
-# TEMPORARY: force the bye screen so it can be inspected on-device.
-# Set to False after the layout is approved; automatic bye-week detection remains.
-FORCE_BYE_PREVIEW = True
+# Bye preview override is disabled; automatic bye-week detection is active.
+FORCE_BYE_PREVIEW = False
 
 TEAM_BG = {
     "ARI":"#97233F", "ATL":"#A71930", "BAL":"#241773", "BUF":"#00338D", "CAR":"#0085CA", "CHI":"#0B162A", "CIN":"#FB4F14", "CLE":"#311D00",
