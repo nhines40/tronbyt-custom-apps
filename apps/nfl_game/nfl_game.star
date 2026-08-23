@@ -12,9 +12,6 @@ WHITE = "#ffffff"
 BLACK = "#000000"
 YELLOW = "#ffff00"
 
-# Bye preview override is disabled; automatic bye-week detection is active.
-FORCE_BYE_PREVIEW = False
-
 TEAM_BG = {
     "ARI":"#97233F", "ATL":"#A71930", "BAL":"#241773", "BUF":"#00338D", "CAR":"#0085CA", "CHI":"#0B162A", "CIN":"#FB4F14", "CLE":"#311D00",
     "DAL":"#003594", "DEN":"#FB4F14", "DET":"#0076B6", "GB":"#203731", "HOU":"#03202F", "IND":"#002C5F", "JAX":"#006778", "KC":"#E31837",
@@ -274,18 +271,25 @@ def make_bye_state(team,upcoming,latest_final,fallback_record=""):
 
 def selected_games(config):
     mode=s(config.get("mode"),"team")
-    if mode=="all":
-        games=get_games(config); out=[]
-        for g in games:
-            if g.get("state")!="bye": out.append(g)
-        return out
-    team=s(config.get("team"),"PHI"); games=get_team_games(config,team)
+    if mode=="all": return get_games(config)
+    team=s(config.get("team"),"PHI")
+    scoreboard=get_games(config)
+    scoreboard_live=[]; scoreboard_final=None
+    rollover=weekly_rollover_start(); now=time.now().in_location("America/New_York")
+    for g in scoreboard:
+        if g["away"]["code"]!=team and g["home"]["code"]!=team: continue
+        if g["state"]=="live": scoreboard_live.append(g)
+        elif g["state"]=="final" and g.get("event_time")!=None and g["event_time"]>=rollover and g["event_time"]<=now:
+            if scoreboard_final==None or scoreboard_final.get("event_time")==None or g["event_time"]>scoreboard_final["event_time"]: scoreboard_final=g
+    if len(scoreboard_live)>0: return scoreboard_live
+    if scoreboard_final!=None: return [scoreboard_final]
+    games=get_team_games(config,team)
     if len(games)==0:
-        games=get_games(config); fallback=[]
-        for g in games:
+        fallback=[]
+        for g in scoreboard:
             if g["away"]["code"]==team or g["home"]["code"]==team: fallback.append(g)
         return fallback
-    now=time.now().in_location("America/New_York"); rollover=weekly_rollover_start(); next_rollover=rollover+time.parse_duration("168h"); live=[]; recent_final=None; upcoming=None; latest_final=None
+    next_rollover=rollover+time.parse_duration("168h"); live=[]; recent_final=None; upcoming=None; latest_final=None
     for g in games:
         et=g.get("event_time")
         if g["state"]=="live": live.append(g); continue
@@ -294,16 +298,14 @@ def selected_games(config):
             if et!=None and et>=rollover and et<=now and (recent_final==None or recent_final.get("event_time")==None or et>recent_final["event_time"]): recent_final=g
         elif g["state"]=="pre" and et!=None and et>=now:
             if upcoming==None or upcoming.get("event_time")==None or et<upcoming["event_time"]: upcoming=g
+    if len(live)>0: return live
+    if recent_final!=None: return [recent_final]
     if upcoming!=None: upcoming=fill_pregame_records(config,upcoming)
     fallback_record=""
     if upcoming!=None: fallback_record=calculated_record(games,team,upcoming.get("season_type"))
-    if FORCE_BYE_PREVIEW and upcoming!=None:
-        bye=make_bye_state(team,upcoming,latest_final,fallback_record)
-        if bye!=None: return [bye]
-    if len(live)>0: return live
-    if recent_final!=None: return [recent_final]
     if upcoming!=None:
-        if upcoming["event_time"]>=next_rollover:
+        # NFL byes only exist in the regular season. Preseason/postseason gaps are not bye weeks.
+        if upcoming.get("season_type")==2 and upcoming["event_time"]>=next_rollover:
             bye=make_bye_state(team,upcoming,latest_final,fallback_record)
             if bye!=None: return [bye]
         return [upcoming]
