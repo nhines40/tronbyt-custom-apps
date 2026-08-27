@@ -186,27 +186,23 @@ def get_games(config): return parse_scoreboard(fetch_json("https://site.api.espn
 
 def get_week_games(config):
     start=weekly_rollover_start(); end=start+time.parse_duration("167h59m")
-    seed=get_games(config); season_type=0; week_number=0
-    for g in seed:
-        et=g.get("event_time")
-        if et!=None and et>=start and et<=end and g.get("season_type")!=0 and g.get("week_number")!=0:
-            season_type=g["season_type"]; week_number=g["week_number"]; break
-    if season_type==0 or week_number==0:
-        for g in seed:
-            if g.get("season_type")!=0 and g.get("week_number")!=0:
-                season_type=g["season_type"]; week_number=g["week_number"]; break
-    if season_type==0 or week_number==0: return seed
-    url="https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&seasontype="+str(season_type)+"&week="+str(week_number)
-    games=parse_scoreboard(fetch_json(url,30),config); out=[]; seen={}
-    for g in games:
-        et=g.get("event_time")
-        if et==None or et<start or et>end: continue
-        key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]
-        if seen.get(key)!=None: continue
-        seen[key]=True
-        if g["state"]=="pre": g=fill_pregame_records(config,g)
-        out.append(g)
-    return out
+    season=start.year
+    if start.month<=2: season=season-1
+    games=[]; seen={}
+    # Pull the full season feed for preseason, regular season, and postseason, then
+    # keep only games inside this app's Tuesday 5 AM -> Tuesday 5 AM display week.
+    # This avoids ESPN's current-scoreboard/week inference quirks during preseason.
+    for season_type in [1,2,3]:
+        url="https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=1000&dates="+str(season)+"&seasontype="+str(season_type)
+        for g in parse_scoreboard(fetch_json(url,60),config):
+            et=g.get("event_time")
+            if et==None or et<start or et>end: continue
+            key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]
+            if seen.get(key)!=None: continue
+            seen[key]=True
+            if g["state"]=="pre": g=fill_pregame_records(config,g)
+            games.append(g)
+    return games
 
 def get_team_games(config,team):
     now=time.now().in_location("America/New_York"); season=now.year
