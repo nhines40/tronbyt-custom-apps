@@ -184,18 +184,20 @@ def parse_scoreboard(data,config):
 def get_games(config): return parse_scoreboard(fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30),config)
 
 def get_week_games(config):
-    start=weekly_rollover_start(); games=[]; seen={}
-    # Fetch each calendar day in the Tuesday-through-Monday display week so completed,
-    # live, and upcoming games all remain in the rotation together.
-    for day_offset in range(0,7):
-        day=start+time.parse_duration(str(day_offset*24)+"h")
-        data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&dates="+day.format("20060102"),30)
-        for g in parse_scoreboard(data,config):
-            key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]
-            if seen.get(key)!=None: continue
-            seen[key]=True
-            if g["state"]=="pre": g=fill_pregame_records(config,g)
-            games.append(g)
+    start=weekly_rollover_start(); end=start+time.parse_duration("167h59m")
+    # ESPN's NFL scoreboard accepts a date range. A single range request returns the full
+    # slate instead of the per-day endpoint collapsing to only the currently active slate.
+    date_range=start.format("20060102")+"-"+end.format("20060102")
+    data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&dates="+date_range,30)
+    games=[]; seen={}
+    for g in parse_scoreboard(data,config):
+        et=g.get("event_time")
+        if et==None or et<start or et>end: continue
+        key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]
+        if seen.get(key)!=None: continue
+        seen[key]=True
+        if g["state"]=="pre": g=fill_pregame_records(config,g)
+        games.append(g)
     return games
 
 def get_team_games(config,team):
