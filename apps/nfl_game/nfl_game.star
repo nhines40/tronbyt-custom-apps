@@ -113,7 +113,7 @@ def game_team_tile(meta, score, possession, live, score_color=WHITE):
 def shifted_team_text(text,width,height,font): return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 def shifted_team_text_down(text,width,height,font): return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height-1,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))],main_align="start",cross_align="stretch"))
 def pregame_team_column(meta,record,width):
-    logo=logo_node(meta,width,18)
+    logo=logo_node(meta,19,18)
     return render.Box(color=meta["bg"],width=width,height=32,child=render.Column(children=[shifted_team_text_down(meta["code"],width,6,"tom-thumb"),render.Box(width=width,height=18,child=render.Row(children=[logo],main_align="center",cross_align="center")),shifted_team_text(record,width,8,"CG-pixel-3x5-mono")],main_align="start",cross_align="stretch"))
 
 def left_panel(g):
