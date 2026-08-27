@@ -18,6 +18,14 @@ TEAM_BG = {
     "LV":"#111111", "LAC":"#0080C6", "LAR":"#003594", "MIA":"#008E97", "MIN":"#4F2683", "NE":"#002244", "NO":"#A08A58", "NYG":"#0B2265",
     "NYJ":"#125740", "PHI":"#004C54", "PIT":"#101820", "SF":"#AA0000", "SEA":"#002244", "TB":"#D50A0A", "TEN":"#0C2340", "WSH":"#5A1414",
 }
+# Contrast overrides copied from tronbyt/apps nflscores.
+ALT_BG = {
+    "LAC":"#1281c4", "MIA":"#008E97", "NO":"#000000", "SEA":"#002244", "TB":"#34302B",
+}
+ALT_LOGO = {
+    "IND":"https://i.ibb.co/jzMc7SB/colts.png",
+    "LAR":"https://i.ibb.co/7JjCcrtk/lar.png",
+}
 TEAM_NAMES = {
     "ARI":"Arizona Cardinals", "ATL":"Atlanta Falcons", "BAL":"Baltimore Ravens", "BUF":"Buffalo Bills", "CAR":"Carolina Panthers", "CHI":"Chicago Bears", "CIN":"Cincinnati Bengals", "CLE":"Cleveland Browns",
     "DAL":"Dallas Cowboys", "DEN":"Denver Broncos", "DET":"Detroit Lions", "GB":"Green Bay Packers", "HOU":"Houston Texans", "IND":"Indianapolis Colts", "JAX":"Jacksonville Jaguars", "KC":"Kansas City Chiefs",
@@ -57,14 +65,25 @@ def logo_bytes(url):
     r = http.get(url=url, ttl_seconds=36000)
     return r.body() if r.status_code == 200 else None
 
+def scoreboard_logo_url(code, logo):
+    alt = ALT_LOGO.get(code)
+    if alt != None: return alt
+    if logo == "": return "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500-dark/scoreboard/"+code.lower()+".png&h=50&w=50"
+    if logo.find("a.espncdn.com") != -1:
+        logo = logo.replace("500/scoreboard", "500-dark/scoreboard")
+        logo = logo.replace("https://a.espncdn.com/", "https://a.espncdn.com/combiner/i?img=")
+        if logo.find("combiner/i?img=") != -1: logo = logo+"&h=50&w=50"
+    return logo
+
 def team_meta(team):
     if type(team) != "dict": return {"code":"NFL","bg":"#202020","logo":""}
     code = s(team.get("abbreviation"), "NFL")
     col = s(team.get("color"), "")
     if col != "" and col[0] != "#": col = "#" + col
-    if col == "" or col == "#000000" or col == "#ffffff": col = TEAM_BG.get(code, "#202020")
-    logo=s(team.get("logo"), "")
-    if logo=="" and code!="NFL": logo="https://a.espncdn.com/i/teamlogos/nfl/500/"+code.lower()+".png"
+    alt_bg = ALT_BG.get(code)
+    if alt_bg != None: col = alt_bg
+    elif col == "" or col == "#000000" or col == "#ffffff": col = TEAM_BG.get(code, "#202020")
+    logo = scoreboard_logo_url(code, s(team.get("logo"), "")) if code != "NFL" else ""
     return {"code":code, "bg":col, "logo":logo}
 
 def record_text(competitor):
