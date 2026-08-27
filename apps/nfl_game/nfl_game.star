@@ -248,8 +248,6 @@ def get_week_games(config):
     elif season_type==3:
         weeks=[1,2,3,4,5]
     else:
-        # Regular-season scoreboard normally supplies the week. If it ever does not,
-        # use the calendar-week neighborhood rather than making 32 team-schedule calls.
         weeks=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]
     all_games=[]; seen={}
     for week_number in weeks:
@@ -336,7 +334,7 @@ def main(config):
     frames=[]
     for g in games: frames.append(render_game(g,config))
     if len(frames)==1: return render.Root(child=frames[0])
-    return render.Root(delay=8000,child=render.Animation(children=frames))
+    return render.Root(delay=8000,show_full_animation=True,child=render.Animation(children=frames))
 def get_schema():
     return schema.Schema(version="1",fields=[schema.Dropdown(id="mode",name="Game Mode",desc="Track one team or cycle all NFL games.",icon="gear",default="team",options=[schema.Option(display="Specific Team",value="team"),schema.Option(display="All Games",value="all")]),schema.Dropdown(id="team",name="Team Focus",desc="Team used in Specific Team mode.",icon="gear",default="PHI",options=teamOptions),schema.Color(id="pregame_date_color",name="Pregame Date Color",desc="Pregame weekday/date color.",icon="brush",default=WHITE),schema.Color(id="pregame_time_color",name="Pregame Time Color",desc="Pregame kickoff-time color.",icon="brush",default=WHITE),schema.Color(id="quarter_color",name="Quarter Color",desc="Live-game quarter color.",icon="brush",default=WHITE),schema.Color(id="clock_color",name="Clock Color",desc="Live-game clock color.",icon="brush",default=WHITE),schema.Color(id="field_color",name="Field Position Color",desc="Live-game field position color.",icon="brush",default=WHITE),schema.Color(id="final_color",name="Final Color",desc="Final-state text color.",icon="brush",default=WHITE)])
 
