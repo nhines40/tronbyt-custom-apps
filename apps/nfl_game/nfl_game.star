@@ -224,28 +224,49 @@ def calculated_record(games,team,season_type):
 
 def get_week_games(config):
     start=weekly_rollover_start(); end=start+time.parse_duration("167h59m")
-    all_games=[]; all_seen={}
-    # Build the slate the same way Specific Team mode gets its data: query every
-    # individual team's schedule, merge the results, and remove the duplicate copy
-    # of each matchup that appears on both teams' schedules.
-    for team in TEAM_NAMES:
-        for g in get_team_games(config,team):
-            et=g.get("event_time")
-            if et==None: continue
-            key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]+"-"+g["clock_text"]
-            if all_seen.get(key)!=None: continue
-            all_seen[key]=True
-            all_games.append(g)
-    games=[]
-    for g in all_games:
+    year=start.year
+    if start.month<=2: year=year-1
+    seed=get_games(config); season_type=0; seed_week=0
+    for g in seed:
         et=g.get("event_time")
-        if et==None or et<start or et>end: continue
+        if et!=None and et>=start and et<=end:
+            if g.get("season_type")!=0: season_type=g.get("season_type")
+            if g.get("week_number")!=0: seed_week=g.get("week_number")
+            if season_type!=0 and seed_week!=0: break
+    if season_type==0:
+        month=start.month
+        if month>=7 and month<=8: season_type=1
+        elif month==1 or month==2: season_type=3
+        else: season_type=2
+    weeks=[]
+    if season_type==1:
+        weeks=[1,2,3,4,5]
+    elif seed_week>0:
+        if seed_week>1: weeks.append(seed_week-1)
+        weeks.append(seed_week)
+        weeks.append(seed_week+1)
+    elif season_type==3:
+        weeks=[1,2,3,4,5]
+    else:
+        # Regular-season scoreboard normally supplies the week. If it ever does not,
+        # use the calendar-week neighborhood rather than making 32 team-schedule calls.
+        weeks=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]
+    all_games=[]; seen={}
+    for week_number in weeks:
+        url="https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&dates="+str(year)+"&seasontype="+str(season_type)+"&week="+str(week_number)
+        for g in parse_scoreboard(fetch_json(url,60),config):
+            et=g.get("event_time")
+            if et==None or et<start or et>end: continue
+            key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]+"-"+g["clock_text"]
+            if seen.get(key)!=None: continue
+            seen[key]=True
+            all_games.append(g)
+    for g in all_games:
         if g["state"]=="pre":
             season_type=g.get("season_type")
             if g["away_record"]=="": g["away_record"]=calculated_record(all_games,g["away"]["code"],season_type)
             if g["home_record"]=="": g["home_record"]=calculated_record(all_games,g["home"]["code"],season_type)
-        games.append(g)
-    return games
+    return all_games
 
 def team_meta_record_from_game(g,team):
     if type(g)!="dict": return None
