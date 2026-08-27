@@ -157,6 +157,7 @@ def parse_competition(event,timezone):
     elif period>4: quarter="OT"
     halftime=state=="live" and period==2 and (display_clock=="0:00" or display_clock=="0:00.0")
     season=event.get("season") if type(event)=="dict" else None; season_type=i(season.get("type"),0) if type(season)=="dict" else 0
+    week=event.get("week") if type(event)=="dict" else None; week_number=i(week.get("number"),0) if type(week)=="dict" else 0
     situation=comp.get("situation"); possession=""; down_distance=""; field_position=""
     if type(situation)=="dict":
         possession_raw=s(situation.get("possession"),"")
@@ -169,7 +170,7 @@ def parse_competition(event,timezone):
         parse_date=date_raw
         if len(date_raw)==17 and date_raw[16]=="Z": parse_date=date_raw[:16]+":00Z"
         t=time.parse_time(parse_date).in_location(timezone); event_time=t; weekday_text=t.format("Mon").upper(); month_text=t.format("Jan").upper(); day_text=t.format("2"); date_text=month_text+" "+day_text; clock_text=t.format("3:04"); clock_hour=t.format("3"); clock_minute=t.format("04")
-    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"halftime":halftime,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute,"event_time":event_time,"season_type":season_type}
+    return {"away":away,"home":home,"away_score":away_score,"home_score":home_score,"away_record":away_record,"home_record":home_record,"state":state,"quarter":quarter,"clock":display_clock,"halftime":halftime,"possession":possession,"down_distance":down_distance,"field_position":field_position,"weekday_text":weekday_text,"date_text":date_text,"month_text":month_text,"day_text":day_text,"clock_text":clock_text,"clock_hour":clock_hour,"clock_minute":clock_minute,"event_time":event_time,"season_type":season_type,"week_number":week_number}
 
 def parse_scoreboard(data,config):
     if type(data)!="dict": return []
@@ -185,20 +186,27 @@ def get_games(config): return parse_scoreboard(fetch_json("https://site.api.espn
 
 def get_week_games(config):
     start=weekly_rollover_start(); end=start+time.parse_duration("167h59m")
-    # ESPN's NFL scoreboard accepts a date range. A single range request returns the full
-    # slate instead of the per-day endpoint collapsing to only the currently active slate.
-    date_range=start.format("20060102")+"-"+end.format("20060102")
-    data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&dates="+date_range,30)
-    games=[]; seen={}
-    for g in parse_scoreboard(data,config):
+    seed=get_games(config); season_type=0; week_number=0
+    for g in seed:
+        et=g.get("event_time")
+        if et!=None and et>=start and et<=end and g.get("season_type")!=0 and g.get("week_number")!=0:
+            season_type=g["season_type"]; week_number=g["week_number"]; break
+    if season_type==0 or week_number==0:
+        for g in seed:
+            if g.get("season_type")!=0 and g.get("week_number")!=0:
+                season_type=g["season_type"]; week_number=g["week_number"]; break
+    if season_type==0 or week_number==0: return seed
+    url="https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&seasontype="+str(season_type)+"&week="+str(week_number)
+    games=parse_scoreboard(fetch_json(url,30),config); out=[]; seen={}
+    for g in games:
         et=g.get("event_time")
         if et==None or et<start or et>end: continue
         key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]
         if seen.get(key)!=None: continue
         seen[key]=True
         if g["state"]=="pre": g=fill_pregame_records(config,g)
-        games.append(g)
-    return games
+        out.append(g)
+    return out
 
 def get_team_games(config,team):
     now=time.now().in_location("America/New_York"); season=now.year
