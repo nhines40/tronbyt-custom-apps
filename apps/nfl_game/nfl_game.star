@@ -184,26 +184,6 @@ def parse_scoreboard(data,config):
 
 def get_games(config): return parse_scoreboard(fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30),config)
 
-def get_week_games(config):
-    start=weekly_rollover_start(); end=start+time.parse_duration("167h59m")
-    season=start.year
-    if start.month<=2: season=season-1
-    games=[]; seen={}
-    # Pull the full season feed for preseason, regular season, and postseason, then
-    # keep only games inside this app's Tuesday 5 AM -> Tuesday 5 AM display week.
-    # This avoids ESPN's current-scoreboard/week inference quirks during preseason.
-    for season_type in [1,2,3]:
-        url="https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=1000&dates="+str(season)+"&seasontype="+str(season_type)
-        for g in parse_scoreboard(fetch_json(url,60),config):
-            et=g.get("event_time")
-            if et==None or et<start or et>end: continue
-            key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]
-            if seen.get(key)!=None: continue
-            seen[key]=True
-            if g["state"]=="pre": g=fill_pregame_records(config,g)
-            games.append(g)
-    return games
-
 def get_team_games(config,team):
     now=time.now().in_location("America/New_York"); season=now.year
     if now.month<=2: season=season-1
@@ -229,12 +209,6 @@ def weekly_rollover_start():
     hours_back=days_back*24+(now.hour-5); duration=str(hours_back)+"h"+str(now.minute)+"m"+str(now.second)+"s"
     return now-time.parse_duration(duration)
 
-def team_meta_record_from_game(g,team):
-    if type(g)!="dict": return None
-    if g["away"]["code"]==team: return {"meta":g["away"],"record":g["away_record"]}
-    if g["home"]["code"]==team: return {"meta":g["home"],"record":g["home_record"]}
-    return None
-
 def calculated_record(games,team,season_type):
     wins=0; losses=0; ties=0
     for g in games:
@@ -247,6 +221,37 @@ def calculated_record(games,team,season_type):
         else: ties+=1
     if ties>0: return str(wins)+"-"+str(losses)+"-"+str(ties)
     return str(wins)+"-"+str(losses)
+
+def get_week_games(config):
+    start=weekly_rollover_start(); end=start+time.parse_duration("167h59m")
+    all_games=[]; all_seen={}
+    # Build the slate the same way Specific Team mode gets its data: query every
+    # individual team's schedule, merge the results, and remove the duplicate copy
+    # of each matchup that appears on both teams' schedules.
+    for team in TEAM_NAMES:
+        for g in get_team_games(config,team):
+            et=g.get("event_time")
+            if et==None: continue
+            key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]+"-"+g["clock_text"]
+            if all_seen.get(key)!=None: continue
+            all_seen[key]=True
+            all_games.append(g)
+    games=[]
+    for g in all_games:
+        et=g.get("event_time")
+        if et==None or et<start or et>end: continue
+        if g["state"]=="pre":
+            season_type=g.get("season_type")
+            if g["away_record"]=="": g["away_record"]=calculated_record(all_games,g["away"]["code"],season_type)
+            if g["home_record"]=="": g["home_record"]=calculated_record(all_games,g["home"]["code"],season_type)
+        games.append(g)
+    return games
+
+def team_meta_record_from_game(g,team):
+    if type(g)!="dict": return None
+    if g["away"]["code"]==team: return {"meta":g["away"],"record":g["away_record"]}
+    if g["home"]["code"]==team: return {"meta":g["home"],"record":g["home_record"]}
+    return None
 
 def fill_pregame_records(config,g):
     if g==None or g["state"]!="pre": return g
