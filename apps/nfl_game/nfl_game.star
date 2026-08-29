@@ -114,7 +114,6 @@ def left_panel(g):
     return render.Box(width=36,child=render.Column(children=[game_team_tile(g["away"],g["away_score"],g["possession"]==g["away"]["code"],live,away_color),game_team_tile(g["home"],g["home_score"],g["possession"]==g["home"]["code"],live,home_color)]))
 
 def centered_panel_text(text,height,font,color): return render.Box(width=28,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=27,height=height,child=render.Row(children=[render.Text(text,font=font,color=color)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
-def field_position_text(text,height,font,color): return render.Box(width=28,height=height,child=render.Row(children=[spacer_w(2),render.Box(width=26,height=height,child=render.Row(children=[render.Text(text,font=font,color=color)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 def compact_preview_row(text,width,height,font,color): return render.Box(width=width,height=height,child=render.Column(children=[render.Row(children=[render.Text(text,font=font,color=color)],main_align="center",cross_align="center")],main_align="center",cross_align="stretch"))
 def pregame_date_row(month,day,color,width):
     left_width=(width//2)+1; right_width=width-left_width
@@ -136,9 +135,9 @@ def live_clock_row(clock,color):
     colon=render.Box(width=1,height=8,child=render.Column(children=[spacer_h(2),render.Box(width=1,height=1,color=color),spacer_h(2),render.Box(width=1,height=1,color=color),spacer_h(2)],main_align="start",cross_align="center"))
     return render.Box(width=28,height=10,child=render.Row(children=[render.Text(parts[0],font="5x8",color=color),spacer_w(1),colon,spacer_w(1),render.Text(parts[1],font="5x8",color=color)],main_align="center",cross_align="center"))
 def live_panel(g,config):
-    qc=s(config.get("quarter_color"),WHITE); tc=s(config.get("clock_color"),WHITE); fc=s(config.get("field_color"),WHITE)
+    qc=s(config.get("quarter_color"),WHITE); tc=s(config.get("clock_color"),WHITE)
     if g["halftime"]: return render.Box(width=28,height=32,child=render.Column(children=[centered_panel_text("HALFTIME",32,"tom-thumb",qc)],main_align="center",cross_align="stretch"))
-    return render.Box(width=28,height=32,child=render.Column(children=[spacer_h(4),centered_panel_text(g["quarter"],6,"tom-thumb",qc),live_clock_row(g["clock"],tc),spacer_h(4),field_position_text(g["field_position"],8,"CG-pixel-3x5-mono",fc)],main_align="start",cross_align="stretch"))
+    return render.Box(width=28,height=32,child=render.Column(children=[spacer_h(7),centered_panel_text(g["quarter"],6,"tom-thumb",qc),spacer_h(2),live_clock_row(g["clock"],tc),spacer_h(7)],main_align="start",cross_align="stretch"))
 def final_panel(config): return render.Box(width=28,height=32,child=render.Column(children=[centered_panel_text("FINAL",32,"5x8",s(config.get("final_color"),WHITE))],main_align="center",cross_align="stretch"))
 def render_game(g,config):
     if g["state"]=="bye": return render_bye(g)
