@@ -18,14 +18,8 @@ TEAM_BG = {
     "LV":"#111111", "LAC":"#0080C6", "LAR":"#003594", "MIA":"#008E97", "MIN":"#4F2683", "NE":"#002244", "NO":"#A08A58", "NYG":"#0B2265",
     "NYJ":"#125740", "PHI":"#004C54", "PIT":"#101820", "SF":"#AA0000", "SEA":"#002244", "TB":"#D50A0A", "TEN":"#0C2340", "WSH":"#5A1414",
 }
-# Contrast overrides copied from tronbyt/apps nflscores.
-ALT_BG = {
-    "LAC":"#1281c4", "MIA":"#008E97", "NO":"#000000", "SEA":"#002244", "TB":"#34302B",
-}
-ALT_LOGO = {
-    "IND":"https://i.ibb.co/jzMc7SB/colts.png",
-    "LAR":"https://i.ibb.co/7JjCcrtk/lar.png",
-}
+ALT_BG = {"LAC":"#1281c4", "MIA":"#008E97", "NO":"#000000", "SEA":"#002244", "TB":"#34302B"}
+ALT_LOGO = {"IND":"https://i.ibb.co/jzMc7SB/colts.png", "LAR":"https://i.ibb.co/7JjCcrtk/lar.png"}
 TEAM_NAMES = {
     "ARI":"Arizona Cardinals", "ATL":"Atlanta Falcons", "BAL":"Baltimore Ravens", "BUF":"Buffalo Bills", "CAR":"Carolina Panthers", "CHI":"Chicago Bears", "CIN":"Cincinnati Bengals", "CLE":"Cleveland Browns",
     "DAL":"Dallas Cowboys", "DEN":"Denver Broncos", "DET":"Detroit Lions", "GB":"Green Bay Packers", "HOU":"Houston Texans", "IND":"Indianapolis Colts", "JAX":"Jacksonville Jaguars", "KC":"Kansas City Chiefs",
@@ -77,34 +71,33 @@ def scoreboard_logo_url(code, logo):
 
 def team_meta(team):
     if type(team) != "dict": return {"code":"NFL","bg":"#202020","logo":""}
-    code = s(team.get("abbreviation"), "NFL")
-    col = s(team.get("color"), "")
-    if col != "" and col[0] != "#": col = "#" + col
-    alt_bg = ALT_BG.get(code)
-    if alt_bg != None: col = alt_bg
-    elif col == "" or col == "#000000" or col == "#ffffff": col = TEAM_BG.get(code, "#202020")
-    logo = scoreboard_logo_url(code, s(team.get("logo"), "")) if code != "NFL" else ""
-    return {"code":code, "bg":col, "logo":logo}
+    code=s(team.get("abbreviation"),"NFL"); col=s(team.get("color"),"")
+    if col!="" and col[0]!="#": col="#"+col
+    alt_bg=ALT_BG.get(code)
+    if alt_bg!=None: col=alt_bg
+    elif col=="" or col=="#000000" or col=="#ffffff": col=TEAM_BG.get(code,"#202020")
+    logo=scoreboard_logo_url(code,s(team.get("logo"),"")) if code!="NFL" else ""
+    return {"code":code,"bg":col,"logo":logo}
 
 def record_text(competitor):
-    if type(competitor) != "dict": return ""
-    records = competitor.get("records")
-    if type(records) != "list" or len(records) == 0: return ""
+    if type(competitor)!="dict": return ""
+    records=competitor.get("records")
+    if type(records)!="list" or len(records)==0: return ""
     for record in records:
-        if type(record) == "dict" and s(record.get("summary"), "") != "": return s(record.get("summary"), "")
+        if type(record)=="dict" and s(record.get("summary"),"")!="": return s(record.get("summary"),"")
     return ""
 
-def logo_node(meta, width, height=None):
-    if height == None: height = width
-    img = logo_bytes(meta["logo"])
-    if img != None: return render.Image(img, width=width, height=height)
-    return render.Text(meta["code"][0], font="6x13", color=WHITE)
+def logo_node(meta,width,height=None):
+    if height==None: height=width
+    img=logo_bytes(meta["logo"])
+    if img!=None: return render.Image(img,width=width,height=height)
+    return render.Text(meta["code"][0],font="6x13",color=WHITE)
 
-def game_team_tile(meta, score, possession, live, score_color=WHITE):
-    logo_width = 17 if live else 20; info_width = 15; logo = logo_node(meta, logo_width, 16)
+def game_team_tile(meta,score,possession,live,score_color=WHITE):
+    logo_width=17 if live else 20; info_width=15; logo=logo_node(meta,logo_width,16)
     if live:
-        possession_box = render.Box(width=2, height=9, child=render.Column(children=[render.Box(width=2, height=2, color=WHITE) if possession else spacer_w(2)], main_align="center", cross_align="center"))
-        score_row = render.Box(width=info_width, height=9, child=render.Row(children=[spacer_w(2),render.Box(width=11,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center")),possession_box],main_align="start",cross_align="center"))
+        possession_box=render.Box(width=2,height=9,child=render.Column(children=[render.Box(width=2,height=2,color=WHITE) if possession else spacer_w(2)],main_align="center",cross_align="center"))
+        score_row=render.Box(width=info_width,height=9,child=render.Row(children=[spacer_w(2),render.Box(width=11,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center")),possession_box],main_align="start",cross_align="center"))
     else: score_row=render.Box(width=info_width,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center"))
     info=render.Box(width=info_width,height=16,child=render.Column(children=[render.Box(width=info_width,height=7,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),score_row],main_align="start",cross_align="stretch"))
     if live: return render.Box(color=meta["bg"],width=36,height=16,child=render.Row(children=[render.Box(width=17,height=16,child=render.Row(children=[logo],main_align="center",cross_align="center")),spacer_w(1),info],main_align="start",cross_align="center"))
@@ -208,7 +201,7 @@ def get_team_games(config,team):
     if now.month<=2: season=season-1
     tz=s(config.get("timezone"),"America/New_York"); games=[]; seen={}
     for season_type in [1,2,3]:
-        data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/"+team+"/schedule?season="+str(season)+"&seasontype="+str(season_type),120)
+        data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/"+team+"/schedule?season="+str(season)+"&seasontype="+str(season_type),30)
         if type(data)!="dict": continue
         events=data.get("events")
         if type(events)!="list": continue
@@ -242,8 +235,7 @@ def calculated_record(games,team,season_type):
     return str(wins)+"-"+str(losses)
 
 def get_week_games(config):
-    start=weekly_rollover_start(); end=start+time.parse_duration("167h59m")
-    year=start.year
+    start=weekly_rollover_start(); end=start+time.parse_duration("167h59m"); year=start.year
     if start.month<=2: year=year-1
     seed=get_games(config); season_type=0; seed_week=0
     for g in seed:
@@ -258,16 +250,12 @@ def get_week_games(config):
         elif month==1 or month==2: season_type=3
         else: season_type=2
     weeks=[]
-    if season_type==1:
-        weeks=[1,2,3,4,5]
+    if season_type==1: weeks=[1,2,3,4,5]
     elif seed_week>0:
         if seed_week>1: weeks.append(seed_week-1)
-        weeks.append(seed_week)
-        weeks.append(seed_week+1)
-    elif season_type==3:
-        weeks=[1,2,3,4,5]
-    else:
-        weeks=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]
+        weeks.append(seed_week); weeks.append(seed_week+1)
+    elif season_type==3: weeks=[1,2,3,4,5]
+    else: weeks=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]
     all_games=[]; seen={}
     for week_number in weeks:
         url="https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&dates="+str(year)+"&seasontype="+str(season_type)+"&week="+str(week_number)
@@ -276,8 +264,7 @@ def get_week_games(config):
             if et==None or et<start or et>end: continue
             key=g["away"]["code"]+"-"+g["home"]["code"]+"-"+g["date_text"]+"-"+g["clock_text"]
             if seen.get(key)!=None: continue
-            seen[key]=True
-            all_games.append(g)
+            seen[key]=True; all_games.append(g)
     for g in all_games:
         if g["state"]=="pre":
             season_type=g.get("season_type")
@@ -310,35 +297,42 @@ def make_bye_state(team,upcoming,latest_final,fallback_record=""):
 def selected_games(config):
     mode=s(config.get("mode"),"team")
     if mode=="all": return get_week_games(config)
-    team=s(config.get("team"),"PHI"); scoreboard=get_games(config); scoreboard_live=[]; scoreboard_final=None; rollover=weekly_rollover_start(); now=time.now().in_location("America/New_York")
+    team=s(config.get("team"),"PHI"); rollover=weekly_rollover_start(); next_rollover=rollover+time.parse_duration("168h"); now=time.now().in_location("America/New_York")
+    scoreboard=get_games(config); games=get_team_games(config,team)
+
+    # A live scoreboard result always wins because it is the freshest game-state source.
     for g in scoreboard:
-        if g["away"]["code"]!=team and g["home"]["code"]!=team: continue
-        if g["state"]=="live": scoreboard_live.append(g)
-        elif g["state"]=="final" and g.get("event_time")!=None and g["event_time"]>=rollover and g["event_time"]<=now:
-            if scoreboard_final==None or scoreboard_final.get("event_time")==None or g["event_time"]>scoreboard_final["event_time"]: scoreboard_final=g
-    if len(scoreboard_live)>0: return scoreboard_live
-    if scoreboard_final!=None: return [scoreboard_final]
-    games=get_team_games(config,team)
-    if len(games)==0:
-        fallback=[]
-        for g in scoreboard:
-            if g["away"]["code"]==team or g["home"]["code"]==team: fallback.append(g)
-        return fallback
-    next_rollover=rollover+time.parse_duration("168h"); live=[]; recent_final=None; upcoming=None; latest_final=None
+        if (g["away"]["code"]==team or g["home"]["code"]==team) and g["state"]=="live": return [g]
+    for g in games:
+        if g["state"]=="live": return [g]
+
+    # Lock Specific Team mode to the game belonging to the current Tue 5 AM -> Tue 5 AM cycle.
+    # This deliberately ignores season-type boundaries, so the final preseason game cannot be
+    # displaced by Week 1 just because ESPN starts surfacing the regular-season schedule.
+    cycle_game=None
     for g in games:
         et=g.get("event_time")
-        if g["state"]=="live": live.append(g); continue
-        if g["state"]=="final":
-            if et!=None and (latest_final==None or latest_final.get("event_time")==None or et>latest_final["event_time"]): latest_final=g
-            if et!=None and et>=rollover and et<=now and (recent_final==None or recent_final.get("event_time")==None or et>recent_final["event_time"]): recent_final=g
-        elif g["state"]=="pre" and et!=None and et>=now:
-            if upcoming==None or upcoming.get("event_time")==None or et<upcoming["event_time"]: upcoming=g
-    if len(live)>0: return live
-    if recent_final!=None: return [recent_final]
-    if upcoming!=None: upcoming=fill_pregame_records(config,upcoming)
-    fallback_record=""
-    if upcoming!=None: fallback_record=calculated_record(games,team,upcoming.get("season_type"))
+        if et==None or et<rollover or et>=next_rollover: continue
+        if cycle_game==None or cycle_game.get("event_time")==None or et<cycle_game["event_time"]: cycle_game=g
+    for g in scoreboard:
+        if g["away"]["code"]!=team and g["home"]["code"]!=team: continue
+        et=g.get("event_time")
+        if et==None or et<rollover or et>=next_rollover: continue
+        # Prefer scoreboard state for the same current-cycle matchup when available.
+        if cycle_game==None or (g["away"]["code"]==cycle_game["away"]["code"] and g["home"]["code"]==cycle_game["home"]["code"]): cycle_game=g
+    if cycle_game!=None:
+        if cycle_game["state"]=="pre": cycle_game=fill_pregame_records(config,cycle_game)
+        return [cycle_game]
+
+    # No game in this cycle: this can be a true regular-season bye. Find the next game,
+    # but only show that future matchup directly after the Tuesday rollover that owns it.
+    upcoming=None; latest_final=None
+    for g in games:
+        et=g.get("event_time")
+        if g["state"]=="final" and et!=None and (latest_final==None or latest_final.get("event_time")==None or et>latest_final["event_time"]): latest_final=g
+        elif g["state"]=="pre" and et!=None and et>=now and (upcoming==None or upcoming.get("event_time")==None or et<upcoming["event_time"]): upcoming=g
     if upcoming!=None:
+        upcoming=fill_pregame_records(config,upcoming); fallback_record=calculated_record(games,team,upcoming.get("season_type"))
         if upcoming.get("season_type")==2 and upcoming["event_time"]>=next_rollover:
             bye=make_bye_state(team,upcoming,latest_final,fallback_record)
             if bye!=None: return [bye]
