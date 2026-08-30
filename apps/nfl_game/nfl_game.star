@@ -194,6 +194,10 @@ def parse_scoreboard(data,config):
     return games
 
 def get_games(config): return parse_scoreboard(fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",30),config)
+def get_games_for_date(config,event_time):
+    if event_time==None: return []
+    date_key=event_time.format("20060102")
+    return parse_scoreboard(fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100&dates="+date_key,30),config)
 
 def get_team_games(config,team):
     now=time.now().in_location("America/New_York"); season=now.year
@@ -317,9 +321,15 @@ def selected_games(config):
         if g["away"]["code"]!=team and g["home"]["code"]!=team: continue
         et=g.get("event_time")
         if et==None or et<rollover or et>=next_rollover: continue
-        # Prefer scoreboard state for the same current-cycle matchup when available.
         if cycle_game==None or (g["away"]["code"]==cycle_game["away"]["code"] and g["home"]["code"]==cycle_game["home"]["code"]): cycle_game=g
     if cycle_game!=None:
+        # The team schedule can lag after a game ends and revert the matchup to a pregame state.
+        # Re-read that matchup's game-day scoreboard before rendering so live/final status and
+        # scores remain authoritative through the Tuesday 5 AM rollover.
+        for fresh in get_games_for_date(config,cycle_game.get("event_time")):
+            if fresh["away"]["code"]==cycle_game["away"]["code"] and fresh["home"]["code"]==cycle_game["home"]["code"]:
+                cycle_game=fresh
+                break
         if cycle_game["state"]=="pre": cycle_game=fill_pregame_records(config,cycle_game)
         return [cycle_game]
 
