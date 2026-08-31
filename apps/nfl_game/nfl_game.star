@@ -20,6 +20,7 @@ TEAM_BG = {
 }
 ALT_BG = {"LAC":"#1281c4", "MIA":"#008E97", "NO":"#000000", "SEA":"#002244", "TB":"#34302B"}
 ALT_LOGO = {"IND":"https://i.ibb.co/jzMc7SB/colts.png", "LAR":"https://i.ibb.co/7JjCcrtk/lar.png"}
+LOGO_MAGNIFY = {"BAL":2, "CAR":4, "DAL":2, "DEN":2, "DET":2, "GB":2, "SF":2}
 TEAM_NAMES = {
     "ARI":"Arizona Cardinals", "ATL":"Atlanta Falcons", "BAL":"Baltimore Ravens", "BUF":"Buffalo Bills", "CAR":"Carolina Panthers", "CHI":"Chicago Bears", "CIN":"Cincinnati Bengals", "CLE":"Cleveland Browns",
     "DAL":"Dallas Cowboys", "DEN":"Denver Broncos", "DET":"Detroit Lions", "GB":"Green Bay Packers", "HOU":"Houston Texans", "IND":"Indianapolis Colts", "JAX":"Jacksonville Jaguars", "KC":"Kansas City Chiefs",
@@ -90,7 +91,9 @@ def record_text(competitor):
 def logo_node(meta,width,height=None):
     if height==None: height=width
     img=logo_bytes(meta["logo"])
-    if img!=None: return render.Image(img,width=width,height=height)
+    if img!=None:
+        extra=LOGO_MAGNIFY.get(meta["code"],0)
+        return render.Image(img,width=width+extra,height=height+extra)
     return render.Text(meta["code"][0],font="6x13",color=WHITE)
 
 def game_team_tile(meta,score,possession,live,score_color=WHITE):
