@@ -112,29 +112,54 @@ def logo_node(meta,width,height=None):
 
 def shifted_team_text(text,width,height,font): return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 
-def tiny_single_rows(d):
-    return {"0":[7,5,5,7],"1":[2,6,2,7],"2":[7,1,6,7],"3":[7,1,3,7],"4":[5,5,7,1],"5":[7,4,7,1],"6":[7,4,7,5],"7":[7,1,2,2],"8":[7,5,7,5],"9":[7,5,7,1]}.get(d,[0,0,0,0])
-def tiny_double_rows(d):
-    return {"0":[3,2,2,3],"1":[1,1,1,1],"2":[3,1,2,3],"3":[3,1,1,3],"4":[2,2,3,1],"5":[3,2,3,1],"6":[3,2,3,3],"7":[3,1,1,1],"8":[3,2,3,3],"9":[3,3,1,3]}.get(d,[0,0,0,0])
-def tiny_rank(rank):
-    text=str(rank); rows=[]
-    for y in range(0,4):
-        pixels=[]
-        if len(text)==1:
-            bits=tiny_single_rows(text)[y]
-            pixels=[spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&4 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1)]
-        else:
-            left=tiny_double_rows(text[0])[y]; right=tiny_double_rows(text[1])[y]
-            pixels=[render.Box(width=1,height=1,color=WHITE) if left&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if left&1 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if right&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if right&1 else spacer_w(1)]
-        rows.append(render.Row(children=pixels))
-    return render.Box(width=4,height=4,child=render.Column(children=rows))
+# Full 3x5 pixel numerals for pregame rankings. Two-digit ranks use a true
+# one-pixel gap, so 10-25 remain readable instead of collapsing into a block.
+def rank_digit_rows(d):
+    return {
+        "0":[7,5,5,5,7], "1":[2,6,2,2,7], "2":[7,1,7,4,7], "3":[7,1,7,1,7], "4":[5,5,7,1,1],
+        "5":[7,4,7,1,7], "6":[7,4,7,5,7], "7":[7,1,2,2,2], "8":[7,5,7,5,7], "9":[7,5,7,1,7]
+    }.get(d,[0,0,0,0,0])
+def rank_digit(d):
+    rows=[]
+    for bits in rank_digit_rows(d):
+        rows.append(render.Row(children=[
+            render.Box(width=1,height=1,color=WHITE) if bits&4 else spacer_w(1),
+            render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),
+            render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1),
+        ]))
+    return render.Box(width=3,height=5,child=render.Column(children=rows))
+def rank_box(rank):
+    text=str(rank)
+    if len(text)==1: return render.Box(width=3,height=5,child=rank_digit(text))
+    return render.Box(width=7,height=5,child=render.Row(children=[rank_digit(text[0]),spacer_w(1),rank_digit(text[1])]))
+
+# Compact 2x4 numerals are only used in the 15px live/final info column where
+# a full 3x5 two-digit rank cannot coexist with the team abbreviation.
+def compact_rank_rows(d):
+    return {"0":[3,2,2,3],"1":[1,1,1,1],"2":[3,1,2,3],"3":[3,1,1,3],"4":[2,2,3,1],"5":[3,2,3,1],"6":[3,2,3,3],"7":[3,1,1,1],"8":[3,3,3,3],"9":[3,3,1,3]}.get(d,[0,0,0,0])
+def compact_rank_digit(d):
+    rows=[]
+    for bits in compact_rank_rows(d):
+        rows.append(render.Row(children=[render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1)]))
+    return render.Box(width=2,height=4,child=render.Column(children=rows))
+def compact_rank_box(rank):
+    text=str(rank)
+    if len(text)==1: return render.Box(width=2,height=4,child=compact_rank_digit(text))
+    return render.Box(width=5,height=4,child=render.Row(children=[compact_rank_digit(text[0]),spacer_w(1),compact_rank_digit(text[1])]))
+
 def team_code_row(meta,width,height,x_shift=0):
     rank=i(meta.get("rank"),0)
     if rank<=0:
         left=x_shift if x_shift>0 else 0; body_width=width-left
         return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=([spacer_w(left)] if left>0 else [])+[render.Box(width=body_width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))]))
-    left=2+x_shift; code_width=width-left-5
-    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[spacer_w(left),render.Box(width=code_width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),tiny_rank(rank)],main_align="start",cross_align="center"))]))
+    # On the wide pregame blocks, reserve a clean 1px gap after the abbreviation
+    # and use a proper 3x5 (or 7x5 two-digit) ranking. The abbreviation shifts
+    # only slightly left to make room instead of sharing the rank's center point.
+    if width>=20:
+        rw=3 if rank<10 else 7; left=1; code_width=width-left-1-rw
+        return render.Box(width=width,height=height,child=render.Column(children=[render.Box(width=width,height=height,child=render.Row(children=[spacer_w(left),render.Box(width=code_width,height=height,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),rank_box(rank)],main_align="start",cross_align="center"))]))
+    rw=2 if rank<10 else 5; left=1; code_width=width-left-1-rw
+    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[spacer_w(left),render.Box(width=code_width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),compact_rank_box(rank)],main_align="start",cross_align="center"))]))
 
 def pregame_team_column(meta,record,width,code_shift=0):
     logo=logo_node(meta,19,18)
@@ -179,7 +204,7 @@ def live_panel(g,config):
 def final_panel(config): return centered_panel_text("FINAL",32,"5x8",s(config.get("final_color"),WHITE))
 def render_game(g,config):
     if g["state"]=="bye": return render_bye(g)
-    if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21,1)]))
+    if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21,2)]))
     return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[left_panel(g),live_panel(g,config) if g["state"]=="live" else final_panel(config)]))
 
 def parse_competition(event,timezone,ranks):
