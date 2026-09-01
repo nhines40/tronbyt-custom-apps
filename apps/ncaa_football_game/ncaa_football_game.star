@@ -112,26 +112,33 @@ def logo_node(meta,width,height=None):
 
 def shifted_team_text(text,width,height,font): return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 
-def tiny_digit_rows(d):
-    return {"0":[3,2,3],"1":[1,1,1],"2":[3,1,2],"3":[3,1,3],"4":[2,3,1],"5":[2,1,3],"6":[2,3,3],"7":[3,1,1],"8":[3,3,3],"9":[3,3,1]}.get(d,[0,0,0])
-def tiny_digit(d):
-    rows=[]
-    for bits in tiny_digit_rows(d):
-        rows.append(render.Row(children=[render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1)]))
-    return render.Box(width=2,height=3,child=render.Column(children=rows))
+def tiny_single_rows(d):
+    return {"0":[7,5,5,7],"1":[2,6,2,7],"2":[7,1,6,7],"3":[7,1,3,7],"4":[5,5,7,1],"5":[7,4,7,1],"6":[7,4,7,5],"7":[7,1,2,2],"8":[7,5,7,5],"9":[7,5,7,1]}.get(d,[0,0,0,0])
+def tiny_double_rows(d):
+    return {"0":[3,2,2,3],"1":[1,1,1,1],"2":[3,1,2,3],"3":[3,1,1,3],"4":[2,2,3,1],"5":[3,2,3,1],"6":[3,2,3,3],"7":[3,1,1,1],"8":[3,2,3,3],"9":[3,3,1,3]}.get(d,[0,0,0,0])
 def tiny_rank(rank):
-    text=str(rank)
-    if len(text)==1: body=render.Row(children=[spacer_w(1),tiny_digit(text),spacer_w(1)])
-    else: body=render.Row(children=[tiny_digit(text[0]),tiny_digit(text[1])])
-    return render.Box(width=4,height=4,child=render.Column(children=[body,spacer_h(1)]))
-def team_code_row(meta,width,height):
+    text=str(rank); rows=[]
+    for y in range(0,4):
+        pixels=[]
+        if len(text)==1:
+            bits=tiny_single_rows(text)[y]
+            pixels=[spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&4 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1)]
+        else:
+            left=tiny_double_rows(text[0])[y]; right=tiny_double_rows(text[1])[y]
+            pixels=[render.Box(width=1,height=1,color=WHITE) if left&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if left&1 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if right&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if right&1 else spacer_w(1)]
+        rows.append(render.Row(children=pixels))
+    return render.Box(width=4,height=4,child=render.Column(children=rows))
+def team_code_row(meta,width,height,x_shift=0):
     rank=i(meta.get("rank"),0)
-    if rank<=0: return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))]))
-    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[render.Box(width=4,height=4),spacer_w(1),render.Box(width=width-10,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),tiny_rank(rank)],main_align="start",cross_align="center"))]))
+    if rank<=0:
+        left=x_shift if x_shift>0 else 0; body_width=width-left
+        return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=([spacer_w(left)] if left>0 else [])+[render.Box(width=body_width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))]))
+    left=2+x_shift; code_width=width-left-5
+    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[spacer_w(left),render.Box(width=code_width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),tiny_rank(rank)],main_align="start",cross_align="center"))]))
 
-def pregame_team_column(meta,record,width):
+def pregame_team_column(meta,record,width,code_shift=0):
     logo=logo_node(meta,19,18)
-    return render.Box(color=meta["bg"],width=width,height=32,child=render.Column(children=[team_code_row(meta,width,6),render.Box(width=width,height=18,child=render.Row(children=[logo],main_align="center",cross_align="center")),shifted_team_text(record,width,8,"CG-pixel-3x5-mono")],main_align="start",cross_align="stretch"))
+    return render.Box(color=meta["bg"],width=width,height=32,child=render.Column(children=[team_code_row(meta,width,6,code_shift),render.Box(width=width,height=18,child=render.Row(children=[logo],main_align="center",cross_align="center")),shifted_team_text(record,width,8,"CG-pixel-3x5-mono")],main_align="start",cross_align="stretch"))
 
 def game_team_tile(meta,score,possession,live,score_color=WHITE):
     logo_width=17 if live else 20; info_width=15; logo=logo_node(meta,logo_width,16)
@@ -172,7 +179,7 @@ def live_panel(g,config):
 def final_panel(config): return centered_panel_text("FINAL",32,"5x8",s(config.get("final_color"),WHITE))
 def render_game(g,config):
     if g["state"]=="bye": return render_bye(g)
-    if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21)]))
+    if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21,1)]))
     return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[left_panel(g),live_panel(g,config) if g["state"]=="live" else final_panel(config)]))
 
 def parse_competition(event,timezone,ranks):
