@@ -61,7 +61,7 @@ def complete_team(team):
 
 def team_meta(team):
     team=complete_team(team)
-    if type(team)!="dict": return {"id":"","code":"NCAA","name":"NCAA","bg":FALLBACK_BG,"logo":"","rank":0}
+    if type(team)!="dict": return {"id":"","code":"NCAA","name":"NCAA","bg":FALLBACK_BG,"logo":""}
     code=s(team.get("abbreviation"),"NCAA")
     col=s(team.get("color"),"")
     if col!="" and col[0]!="#": col="#"+col
@@ -69,7 +69,7 @@ def team_meta(team):
         alt=s(team.get("alternateColor"),"")
         if alt!="" and alt[0]!="#": alt="#"+alt
         col=alt if alt!="" and alt!="#000000" and alt!="#ffffff" else FALLBACK_BG
-    return {"id":s(team.get("id"),""),"code":code,"name":s(team.get("displayName"),s(team.get("shortDisplayName"),code)),"bg":col,"logo":logo_url(team),"rank":0}
+    return {"id":s(team.get("id"),""),"code":code,"name":s(team.get("displayName"),s(team.get("shortDisplayName"),code)),"bg":col,"logo":logo_url(team)}
 
 def record_text(c):
     if type(c)!="dict": return ""
@@ -79,98 +79,29 @@ def record_text(c):
         if type(r)=="dict" and s(r.get("summary"),"")!="": return s(r.get("summary"),"")
     return ""
 
-def ap_rankings():
-    data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings",21600); out={}
-    if type(data)!="dict": return out
-    polls=data.get("rankings")
-    if type(polls)!="list": return out
-    ap=None
-    for poll in polls:
-        if type(poll)!="dict": continue
-        name=s(poll.get("name"),"").lower(); short=s(poll.get("shortName"),"").lower()
-        if name.find("ap top 25")!=-1 or short=="ap" or short.find("ap top")!=-1: ap=poll; break
-    if ap==None or type(ap.get("ranks"))!="list": return out
-    for r in ap.get("ranks"):
-        if type(r)!="dict": continue
-        team=r.get("team"); current=i(r.get("current"),0)
-        if type(team)=="dict" and current>0:
-            tid=s(team.get("id"),""); code=s(team.get("abbreviation"),"")
-            if tid!="": out["id:"+tid]=current
-            if code!="": out["code:"+code]=current
-    return out
-
-def apply_rank(meta,ranks):
-    rank=ranks.get("id:"+meta["id"])
-    if rank==None: rank=ranks.get("code:"+meta["code"])
-    meta["rank"]=i(rank,0); return meta
-
 def logo_node(meta,width,height=None):
     if height==None: height=width
     img=logo_bytes(meta["logo"])
     if img!=None: return render.Image(img,width=width,height=height)
     return render.Text(meta["code"][0],font="6x13",color=WHITE)
 
-def shifted_team_text(text,width,height,font): return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
+def shifted_team_text(text,width,height,font):
+    return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 
-# Full 3x5 pixel numerals for pregame rankings. Two-digit ranks use a true
-# one-pixel gap, so 10-25 remain readable instead of collapsing into a block.
-def rank_digit_rows(d):
-    return {
-        "0":[7,5,5,5,7], "1":[2,6,2,2,7], "2":[7,1,7,4,7], "3":[7,1,7,1,7], "4":[5,5,7,1,1],
-        "5":[7,4,7,1,7], "6":[7,4,7,5,7], "7":[7,1,2,2,2], "8":[7,5,7,5,7], "9":[7,5,7,1,7]
-    }.get(d,[0,0,0,0,0])
-def rank_digit(d):
-    rows=[]
-    for bits in rank_digit_rows(d):
-        rows.append(render.Row(children=[
-            render.Box(width=1,height=1,color=WHITE) if bits&4 else spacer_w(1),
-            render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),
-            render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1),
-        ]))
-    return render.Box(width=3,height=5,child=render.Column(children=rows))
-def rank_box(rank):
-    text=str(rank)
-    if len(text)==1: return render.Box(width=3,height=5,child=rank_digit(text))
-    return render.Box(width=7,height=5,child=render.Row(children=[rank_digit(text[0]),spacer_w(1),rank_digit(text[1])]))
+def team_code_row(meta,width,height):
+    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="stretch"))
 
-# Compact 2x4 numerals are only used in the 15px live/final info column where
-# a full 3x5 two-digit rank cannot coexist with the team abbreviation.
-def compact_rank_rows(d):
-    return {"0":[3,2,2,3],"1":[1,1,1,1],"2":[3,1,2,3],"3":[3,1,1,3],"4":[2,2,3,1],"5":[3,2,3,1],"6":[3,2,3,3],"7":[3,1,1,1],"8":[3,3,3,3],"9":[3,3,1,3]}.get(d,[0,0,0,0])
-def compact_rank_digit(d):
-    rows=[]
-    for bits in compact_rank_rows(d):
-        rows.append(render.Row(children=[render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1)]))
-    return render.Box(width=2,height=4,child=render.Column(children=rows))
-def compact_rank_box(rank):
-    text=str(rank)
-    if len(text)==1: return render.Box(width=2,height=4,child=compact_rank_digit(text))
-    return render.Box(width=5,height=4,child=render.Row(children=[compact_rank_digit(text[0]),spacer_w(1),compact_rank_digit(text[1])]))
-
-def team_code_row(meta,width,height,x_shift=0):
-    rank=i(meta.get("rank"),0)
-    if rank<=0:
-        left=x_shift if x_shift>0 else 0; body_width=width-left
-        return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=([spacer_w(left)] if left>0 else [])+[render.Box(width=body_width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))]))
-    # On the wide pregame blocks, reserve a clean 1px gap after the abbreviation
-    # and use a proper 3x5 (or 7x5 two-digit) ranking. The abbreviation shifts
-    # only slightly left to make room instead of sharing the rank's center point.
-    if width>=20:
-        rw=3 if rank<10 else 7; left=1; code_width=width-left-1-rw
-        return render.Box(width=width,height=height,child=render.Column(children=[render.Box(width=width,height=height,child=render.Row(children=[spacer_w(left),render.Box(width=code_width,height=height,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),rank_box(rank)],main_align="start",cross_align="center"))]))
-    rw=2 if rank<10 else 5; left=1; code_width=width-left-1-rw
-    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[spacer_w(left),render.Box(width=code_width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),compact_rank_box(rank)],main_align="start",cross_align="center"))]))
-
-def pregame_team_column(meta,record,width,code_shift=0):
+def pregame_team_column(meta,record,width):
     logo=logo_node(meta,19,18)
-    return render.Box(color=meta["bg"],width=width,height=32,child=render.Column(children=[team_code_row(meta,width,6,code_shift),render.Box(width=width,height=18,child=render.Row(children=[logo],main_align="center",cross_align="center")),shifted_team_text(record,width,8,"CG-pixel-3x5-mono")],main_align="start",cross_align="stretch"))
+    return render.Box(color=meta["bg"],width=width,height=32,child=render.Column(children=[team_code_row(meta,width,6),render.Box(width=width,height=18,child=render.Row(children=[logo],main_align="center",cross_align="center")),shifted_team_text(record,width,8,"CG-pixel-3x5-mono")],main_align="start",cross_align="stretch"))
 
 def game_team_tile(meta,score,possession,live,score_color=WHITE):
     logo_width=17 if live else 20; info_width=15; logo=logo_node(meta,logo_width,16)
     if live:
         possession_box=render.Box(width=2,height=9,child=render.Column(children=[render.Box(width=2,height=2,color=WHITE) if possession else spacer_w(2)],main_align="center",cross_align="center"))
         score_row=render.Box(width=info_width,height=9,child=render.Row(children=[spacer_w(2),render.Box(width=11,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center")),possession_box],main_align="start",cross_align="center"))
-    else: score_row=render.Box(width=info_width,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center"))
+    else:
+        score_row=render.Box(width=info_width,height=9,child=render.Row(children=[render.Text(str(score),font="5x8",color=score_color)],main_align="center",cross_align="center"))
     info=render.Box(width=info_width,height=16,child=render.Column(children=[team_code_row(meta,info_width,7),score_row],main_align="start",cross_align="stretch")); lw=17 if live else 20
     return render.Box(color=meta["bg"],width=36,height=16,child=render.Row(children=[render.Box(width=lw,height=16,child=render.Row(children=[logo],main_align="center",cross_align="center")),spacer_w(1),info],main_align="start",cross_align="center"))
 
@@ -204,10 +135,10 @@ def live_panel(g,config):
 def final_panel(config): return centered_panel_text("FINAL",32,"5x8",s(config.get("final_color"),WHITE))
 def render_game(g,config):
     if g["state"]=="bye": return render_bye(g)
-    if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21,2)]))
+    if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21)]))
     return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[left_panel(g),live_panel(g,config) if g["state"]=="live" else final_panel(config)]))
 
-def parse_competition(event,timezone,ranks):
+def parse_competition(event,timezone):
     comps=event.get("competitions") if type(event)=="dict" else None
     if type(comps)!="list" or len(comps)==0: return None
     comp=comps[0]; cs=comp.get("competitors")
@@ -215,7 +146,7 @@ def parse_competition(event,timezone,ranks):
     away=None; home=None; ascore=0; hscore=0; arec=""; hrec=""
     for c in cs:
         if type(c)!="dict": continue
-        meta=apply_rank(team_meta(c.get("team")),ranks)
+        meta=team_meta(c.get("team"))
         if s(c.get("homeAway"))=="away": away=meta; ascore=score_int(c.get("score")); arec=record_text(c)
         elif s(c.get("homeAway"))=="home": home=meta; hscore=score_int(c.get("score")); hrec=record_text(c)
     if away==None or home==None: return None
@@ -230,18 +161,18 @@ def parse_competition(event,timezone,ranks):
     season=event.get("season"); season_type=i(season.get("type"),2) if type(season)=="dict" else 2; week=event.get("week"); week_number=i(week.get("number"),0) if type(week)=="dict" else 0
     return {"away":away,"home":home,"away_score":ascore,"home_score":hscore,"away_record":arec,"home_record":hrec,"state":state,"quarter":quarter,"clock":clock,"halftime":halftime,"possession":possession,"event_time":et,"weekday_text":wd,"month_text":mo,"day_text":day,"clock_hour":hr,"clock_minute":minute,"season_type":season_type,"week_number":week_number}
 
-def parse_scoreboard(data,config,ranks):
+def parse_scoreboard(data,config):
     if type(data)!="dict" or type(data.get("events"))!="list": return []
     out=[]; tz=s(config.get("timezone"),"America/New_York")
     for e in data.get("events"):
-        g=parse_competition(e,tz,ranks)
+        g=parse_competition(e,tz)
         if g!=None: out.append(g)
     return out
 
 def scoreboard(config,group,date_key=""):
     url="https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?limit=200&groups="+str(group)
     if date_key!="": url=url+"&dates="+date_key
-    return parse_scoreboard(fetch_json(url,30),config,ap_rankings())
+    return parse_scoreboard(fetch_json(url,30),config)
 def division_games(config,date_key=""):
     out=[]; seen={}
     for group in DIVISION_GROUPS:
@@ -270,9 +201,9 @@ def games_in_cycle(config):
 def get_team_games(config,team_id):
     now=time.now().in_location("America/New_York"); year=now.year; data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/"+team_id+"/schedule?season="+str(year),30)
     if type(data)!="dict" or type(data.get("events"))!="list": return []
-    ranks=ap_rankings(); tz=s(config.get("timezone"),"America/New_York"); out=[]
+    tz=s(config.get("timezone"),"America/New_York"); out=[]
     for e in data.get("events"):
-        g=parse_competition(e,tz,ranks)
+        g=parse_competition(e,tz)
         if g!=None: out.append(g)
     return out
 
