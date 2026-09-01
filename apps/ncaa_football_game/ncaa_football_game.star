@@ -138,6 +138,17 @@ def pregame_time_row(hour,minute,color,width):
 def preview_panel(g,config,width=28):
     dc=s(config.get("pregame_date_color"),WHITE); tc=s(config.get("pregame_time_color"),WHITE)
     return render.Box(width=width,height=32,child=render.Column(children=[spacer_h(1),compact_preview_row(g["weekday_text"],width,7,"tom-thumb",dc),pregame_date_row(g["month_text"],g["day_text"],dc,width),pregame_time_row(g["clock_hour"],g["clock_minute"],tc,width),spacer_h(1)]))
+
+def bye_center_panel():
+    return render.Box(color=BLACK,width=18,height=32,child=render.Column(children=[spacer_h(8),compact_preview_row("BYE",18,9,"5x8",WHITE),spacer_h(1),compact_preview_row("WEEK",18,6,"tom-thumb",WHITE),spacer_h(8)],main_align="start",cross_align="stretch"))
+
+def bye_next_panel(g):
+    meta=g["team"]
+    return render.Box(color=meta["bg"],width=23,height=32,child=render.Column(children=[spacer_h(2),render.Box(width=23,height=8,child=render.Row(children=[render.Text("NEXT",font="5x8",color=WHITE)],main_align="center",cross_align="center")),render.Box(width=23,height=8,child=render.Row(children=[render.Text("GAME",font="5x8",color=WHITE)],main_align="center",cross_align="center")),spacer_h(3),render.Box(width=23,height=5,child=render.Row(children=[render.Text(g["month_text"],font="CG-pixel-3x5-mono",color=WHITE),spacer_w(3),render.Text(g["day_text"],font="CG-pixel-3x5-mono",color=WHITE)],main_align="center",cross_align="center")),spacer_h(6)],main_align="start",cross_align="stretch"))
+
+def render_bye(g):
+    return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["team"],g["record"],23),bye_center_panel(),bye_next_panel(g)],main_align="start",cross_align="start"))
+
 def live_clock_row(clock,color):
     parts=clock.split(":")
     if len(parts)!=2: return centered_panel_text(clock,10,"5x8",color)
@@ -149,6 +160,7 @@ def live_panel(g,config):
     return render.Box(width=28,height=32,child=render.Column(children=[spacer_h(7),centered_panel_text(g["quarter"],6,"tom-thumb",qc),spacer_h(2),live_clock_row(g["clock"],tc),spacer_h(7)]))
 def final_panel(config): return centered_panel_text("FINAL",32,"5x8",s(config.get("final_color"),WHITE))
 def render_game(g,config):
+    if g["state"]=="bye": return render_bye(g)
     if g["state"]=="pre": return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[pregame_team_column(g["away"],g["away_record"],21),preview_panel(g,config,22),pregame_team_column(g["home"],g["home_record"],21)]))
     return render.Box(color=BLACK,width=64,height=32,child=render.Row(children=[left_panel(g),live_panel(g,config) if g["state"]=="live" else final_panel(config)]))
 
@@ -230,12 +242,27 @@ def get_team_games(config,team_id):
         if g!=None: out.append(g)
     return out
 
+def team_meta_record_from_game(g,team_id):
+    if type(g)!="dict": return None
+    if g["away"]["id"]==team_id: return {"meta":g["away"],"record":g["away_record"]}
+    if g["home"]["id"]==team_id: return {"meta":g["home"],"record":g["home_record"]}
+    return None
+
+def make_bye_state(team_id,upcoming,latest_final):
+    source=team_meta_record_from_game(upcoming,team_id)
+    if source==None: source=team_meta_record_from_game(latest_final,team_id)
+    if source==None: return None
+    record=source["record"]
+    previous=team_meta_record_from_game(latest_final,team_id)
+    if record=="" and previous!=None: record=previous["record"]
+    return {"state":"bye","team":source["meta"],"record":record,"month_text":upcoming["month_text"],"day_text":upcoming["day_text"]}
+
 def selected_games(config):
     mode=s(config.get("mode"),"team")
     if mode=="all": return games_in_cycle(config)
     team_id=s(config.get("team"),"")
     if team_id=="": return []
-    start=weekly_rollover_start(); end=start+time.parse_duration("168h"); games=get_team_games(config,team_id)
+    start=weekly_rollover_start(); end=start+time.parse_duration("168h"); now=time.now().in_location("America/New_York"); games=get_team_games(config,team_id)
     # Live always wins.
     for g in games:
         if g["state"]=="live": return [g]
@@ -251,12 +278,22 @@ def selected_games(config):
         for g in fresh:
             if g["away"]["id"]==cycle["away"]["id"] and g["home"]["id"]==cycle["home"]["id"]: return [g]
         return [cycle]
-    # True bye: keep the latest final until the next Tuesday cycle. This mirrors
-    # the NFL app's persistence without inventing an opponent.
-    latest=None
+
+    # No game in this Tuesday cycle. Before a school's first game of the season,
+    # show that first matchup even if its kickoff is beyond the current cycle.
+    # After the season has started, use the same BYE WEEK screen as the NFL app.
+    upcoming=None; latest_final=None
     for g in games:
-        if g["state"]=="final" and g["event_time"]!=None and g["event_time"]<start and (latest==None or g["event_time"]>latest["event_time"]): latest=g
-    return [latest] if latest!=None else []
+        et=g["event_time"]
+        if et==None: continue
+        if g["state"]=="final" and et<start and (latest_final==None or et>latest_final["event_time"]): latest_final=g
+        elif g["state"]=="pre" and et>=now and (upcoming==None or et<upcoming["event_time"]): upcoming=g
+    if latest_final==None and upcoming!=None: return [upcoming]
+    if upcoming!=None:
+        bye=make_bye_state(team_id,upcoming,latest_final)
+        if bye!=None: return [bye]
+    if latest_final!=None: return [latest_final]
+    return []
 
 def team_options():
     options=[]; seen={}
