@@ -39,19 +39,22 @@ def logo_bytes(url):
     return r.body() if r.status_code==200 else None
 
 def logo_url(team):
-    direct=s(team.get("logo"),"")
-    if direct!="": return direct
     logos=team.get("logos")
     if type(logos)=="list":
         for logo in logos:
+            if type(logo)!="dict": continue
+            href=s(logo.get("href"),"")
+            if href.find("-dark/")!=-1: return href
+        for logo in logos:
             if type(logo)=="dict" and s(logo.get("href"),"")!="": return s(logo.get("href"),"")
+    direct=s(team.get("logo"),"")
+    if direct!="": return direct.replace("/500/","/500-dark/")
     return ""
 
 def complete_team(team):
     if type(team)!="dict": return team
     tid=s(team.get("id"),"")
     if tid=="": return team
-    if logo_url(team)!="" and s(team.get("color"),"")!="": return team
     data=fetch_json("https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/"+tid,21600)
     full=data.get("team") if type(data)=="dict" else None
     return full if type(full)=="dict" else team
@@ -108,10 +111,23 @@ def logo_node(meta,width,height=None):
     return render.Text(meta["code"][0],font="6x13",color=WHITE)
 
 def shifted_team_text(text,width,height,font): return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
+
+def tiny_digit_rows(d):
+    return {"0":[3,2,3],"1":[1,1,1],"2":[3,1,2],"3":[3,1,3],"4":[2,3,1],"5":[2,1,3],"6":[2,3,3],"7":[3,1,1],"8":[3,3,3],"9":[3,3,1]}.get(d,[0,0,0])
+def tiny_digit(d):
+    rows=[]
+    for bits in tiny_digit_rows(d):
+        rows.append(render.Row(children=[render.Box(width=1,height=1,color=WHITE) if bits&2 else spacer_w(1),render.Box(width=1,height=1,color=WHITE) if bits&1 else spacer_w(1)]))
+    return render.Box(width=2,height=3,child=render.Column(children=rows))
+def tiny_rank(rank):
+    text=str(rank)
+    if len(text)==1: body=render.Row(children=[spacer_w(1),tiny_digit(text),spacer_w(1)])
+    else: body=render.Row(children=[tiny_digit(text[0]),tiny_digit(text[1])])
+    return render.Box(width=4,height=4,child=render.Column(children=[body,spacer_h(1)]))
 def team_code_row(meta,width,height):
-    rank=i(meta.get("rank"),0); children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)]
-    if rank>0: children=children+[spacer_w(1),render.Text(str(rank),font="CG-pixel-3x5-mono",color=WHITE)]
-    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=children,main_align="center",cross_align="center"))],main_align="start",cross_align="stretch"))
+    rank=i(meta.get("rank"),0)
+    if rank<=0: return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))]))
+    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[render.Box(width=4,height=4),spacer_w(1),render.Box(width=width-10,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center")),spacer_w(1),tiny_rank(rank)],main_align="start",cross_align="center"))]))
 
 def pregame_team_column(meta,record,width):
     logo=logo_node(meta,19,18)
