@@ -89,7 +89,7 @@ def shifted_team_text(text,width,height,font):
     return render.Box(width=width,height=height,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height,child=render.Row(children=[render.Text(text,font=font,color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))
 
 def team_code_row(meta,width,height):
-    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="stretch"))
+    return render.Box(width=width,height=height,child=render.Column(children=[spacer_h(1),render.Box(width=width,height=height-1,child=render.Row(children=[spacer_w(1),render.Box(width=width-1,height=height-1,child=render.Row(children=[render.Text(meta["code"],font="tom-thumb",color=WHITE)],main_align="center",cross_align="center"))],main_align="start",cross_align="center"))],main_align="start",cross_align="stretch"))
 
 def pregame_team_column(meta,record,width):
     logo=logo_node(meta,19,18)
